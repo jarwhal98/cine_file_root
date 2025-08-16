@@ -46,6 +46,12 @@ This app is designed to work with The Movie Database (TMDB) API. To use the API:
 1. Get an API key from [TMDB](https://www.themoviedb.org/documentation/api)
 2. Enter your API key in the Settings screen
 
+### TMDB Attribution
+
+This product uses the TMDB API but is not endorsed or certified by TMDB.
+
+See our [Privacy Policy](PRIVACY.md).
+
 ## Future Enhancements
 
 - User reviews and notes
