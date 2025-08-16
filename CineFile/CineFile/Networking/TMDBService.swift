@@ -56,20 +56,29 @@ final class TMDBService {
         return req
     }
 
-    func search(query: String) async throws -> [Movie] {
-        let request = try makeRequest(path: "search/movie", queryItems: [
+    func search(query: String, year: Int? = nil, includeDetails: Bool = true) async throws -> [Movie] {
+        var items = [
             URLQueryItem(name: "query", value: query),
             URLQueryItem(name: "include_adult", value: "false"),
             URLQueryItem(name: "language", value: "en-US"),
             URLQueryItem(name: "page", value: "1")
-        ])
+        ]
+        if let year { items.append(URLQueryItem(name: "year", value: String(year))) }
+        let request = try makeRequest(path: "search/movie", queryItems: items)
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             throw URLError(.badServerResponse)
         }
         let decoded = try JSONDecoder().decode(TMDBMovieSearchResult.self, from: data)
-        // Map summaries then enrich details & credits in parallel (best-effort)
+        // If caller doesn't want details: map summaries only (fast, fewer calls)
+        if includeDetails == false {
+            return decoded.results.map { summary in
+                self.mapToMovie(summary: summary, details: nil, credits: nil)
+            }
+        }
+
+        // Otherwise enrich with details & credits in parallel (best-effort)
         var movies: [Movie] = []
         movies.reserveCapacity(decoded.results.count)
         await withTaskGroup(of: Movie?.self) { group in
@@ -81,7 +90,6 @@ final class TMDBService {
                         let credits = try await self.credits(id: summary.id)
                         return self.mapToMovie(summary: summary, details: details, credits: credits)
                     } catch {
-                        // Fallback to minimal mapping without details
                         return self.mapToMovie(summary: summary, details: nil, credits: nil)
                     }
                 }

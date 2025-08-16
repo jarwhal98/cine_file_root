@@ -220,11 +220,16 @@ class MovieViewModel: ObservableObject {
         }
         var imported: [Movie] = []
 
-        try await withThrowingTaskGroup(of: Movie?.self) { group in
-            for (rank, title, year) in rows {
-                group.addTask { [tmdb] in
-                    // Query TMDB with title and year; pick best match
-                    let results = try await tmdb.search(query: title)
+        // Limit concurrency to avoid timeouts/rate limits
+        let maxConcurrent = 6
+        var iterator = rows.makeIterator()
+        var inFlight: [Task<Movie?, Error>] = []
+        var completed = 0
+        func launchNext() {
+            if let next = iterator.next() {
+                let (rank, title, year) = next
+                let task = Task<Movie?, Error> {
+                    let results = try await tmdb.search(query: title, year: year, includeDetails: false)
                     if let movie = results.first(where: { $0.year == year }) ?? results.first {
                         var m = movie
                         m.listRankings[listID] = rank
@@ -232,14 +237,27 @@ class MovieViewModel: ObservableObject {
                     }
                     return nil
                 }
+                inFlight.append(task)
             }
+        }
 
-            var completed = 0
-            for try await maybe in group {
+        // Prime initial batch
+        for _ in 0..<min(maxConcurrent, rows.count) { launchNext() }
+        while !inFlight.isEmpty {
+            let finished = await withTaskGroup(of: (Int, Movie?).self) { group -> [(Int, Movie?)] in
+                for (i, t) in inFlight.enumerated() {
+                    group.addTask { (i, try? await t.value) }
+                }
+                var results: [(Int, Movie?)] = []
+                for await val in group { results.append(val) }
+                return results
+            }
+            inFlight.removeAll()
+            for (_, maybe) in finished {
                 if let movie = maybe { imported.append(movie) }
                 completed += 1
-                let progress = Double(completed) / Double(total)
-                await MainActor.run { self.importProgress = progress }
+                await MainActor.run { self.importProgress = Double(completed) / Double(total) }
+                launchNext()
             }
         }
 
