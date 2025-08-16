@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @EnvironmentObject var viewModel: MovieViewModel
     @AppStorage("useDarkMode") private var useDarkMode = false
     @AppStorage("useSystemTheme") private var useSystemTheme = true
     @AppStorage("showAdultContent") private var showAdultContent = false
@@ -42,6 +43,24 @@ struct SettingsView: View {
                         UserDefaults.standard.set(apiKey, forKey: "tmdbApiKey")
                     }
                     .disabled(apiKey.isEmpty)
+                }
+
+                Section(header: Text("Import Lists")) {
+                    if viewModel.isImporting {
+                        VStack(alignment: .leading) {
+                            ProgressView(value: viewModel.importProgress)
+                            Text("Importing... \(Int(viewModel.importProgress * 100))%")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    } else {
+                        Button("Import NYTimes 100 (21st Century)") {
+                            viewModel.importNYT21FromCSV()
+                        }
+                        Button("Import AFI 100 (2007)") {
+                            viewModel.importAFIFromCSV()
+                        }
+                    }
                 }
                 
                 Section(header: Text("About")) {

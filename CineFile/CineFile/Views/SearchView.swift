@@ -45,6 +45,16 @@ struct SearchView: View {
                 }
                 .padding(.top, 10)
                 
+                // Error message (e.g., missing API key)
+                if let error = viewModel.errorMessage, !error.isEmpty {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                        .padding(.horizontal, 12)
+                        .padding(.bottom, 4)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                
                 // Results
                 if viewModel.isLoading {
                     Spacer()

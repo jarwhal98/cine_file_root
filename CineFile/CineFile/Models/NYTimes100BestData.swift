@@ -138,10 +138,4 @@ extension Movie {
         // For brevity, we're only including the top 10 here
         // In a real app, you would include all 100 movies
     ]
-    
-    // Helper function to get director's last name for sorting
-    var directorLastName: String {
-        let components = director.split(separator: " ")
-        return components.last?.description ?? director
-    }
 }

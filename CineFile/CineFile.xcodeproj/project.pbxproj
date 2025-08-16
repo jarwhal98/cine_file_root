@@ -20,6 +20,12 @@
 		840A1B742B5D1F8300721F12 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840A1B732B5D1F8300721F12 /* SearchView.swift */; };
 		840A1B762B5D1F9100721F12 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840A1B752B5D1F9100721F12 /* SettingsView.swift */; };
 	840A1B772B5D1FBB00721F12 /* MovieListsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840A1B7A2B5D1FBB00721F12 /* MovieListsView.swift */; };
+	9A1C0F1F2D5A00A000ABCDEF /* MovieList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A1C0F202D5A00A000ABCDEF /* MovieList.swift */; };
+	9A1C0F1B2D5A000100ABCDEF /* NYTimes100BestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A1C0F1A2D5A000100ABCDEF /* NYTimes100BestData.swift */; };
+	9A1C0F1D2D5A001000ABCDEF /* TMDBService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A1C0F1C2D5A001000ABCDEF /* TMDBService.swift */; };
+	9A1C0F232D5A01E000ABCDEF /* CSVImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A1C0F222D5A01E000ABCDEF /* CSVImporter.swift */; };
+	9A1C0F262D5A026000ABCDEF /* nyt_best_movies_21st_century.csv in Resources */ = {isa = PBXBuildFile; fileRef = 9A1C0F242D5A026000ABCDEF /* nyt_best_movies_21st_century.csv */; };
+	9A1C0F272D5A026000ABCDEF /* afi_top_100_2007.csv in Resources */ = {isa = PBXBuildFile; fileRef = 9A1C0F252D5A026000ABCDEF /* afi_top_100_2007.csv */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -38,6 +44,12 @@
 		840A1B732B5D1F8300721F12 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		840A1B752B5D1F9100721F12 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 	840A1B7A2B5D1FBB00721F12 /* MovieListsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieListsView.swift; sourceTree = "<group>"; };
+	9A1C0F1A2D5A000100ABCDEF /* NYTimes100BestData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NYTimes100BestData.swift; sourceTree = "<group>"; };
+	9A1C0F1C2D5A001000ABCDEF /* TMDBService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TMDBService.swift; sourceTree = "<group>"; };
+	9A1C0F202D5A00A000ABCDEF /* MovieList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieList.swift; sourceTree = "<group>"; };
+	9A1C0F222D5A01E000ABCDEF /* CSVImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVImporter.swift; sourceTree = "<group>"; };
+	9A1C0F242D5A026000ABCDEF /* nyt_best_movies_21st_century.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = nyt_best_movies_21st_century.csv; sourceTree = "<group>"; };
+	9A1C0F252D5A026000ABCDEF /* afi_top_100_2007.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = afi_top_100_2007.csv; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,6 +82,9 @@
 		840A1B4F2B5D1E7A00721F12 /* CineFile */ = {
 			isa = PBXGroup;
 			children = (
+				9A1C0F1E2D5A002000ABCDEF /* Networking */,
+				9A1C0F282D5A02D000ABCDEF /* Utilities */,
+				9A1C0F292D5A02F000ABCDEF /* Data */,
 				840A1B6A2B5D1F3600721F12 /* Views */,
 				840A1B672B5D1F2200721F12 /* ViewModels */,
 				840A1B642B5D1F0F00721F12 /* Models */,
@@ -94,8 +109,35 @@
 			isa = PBXGroup;
 			children = (
 				840A1B652B5D1F1800721F12 /* Movie.swift */,
+				9A1C0F202D5A00A000ABCDEF /* MovieList.swift */,
+                9A1C0F1A2D5A000100ABCDEF /* NYTimes100BestData.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		9A1C0F1E2D5A002000ABCDEF /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				9A1C0F1C2D5A001000ABCDEF /* TMDBService.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		9A1C0F282D5A02D000ABCDEF /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				9A1C0F222D5A01E000ABCDEF /* CSVImporter.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		9A1C0F292D5A02F000ABCDEF /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				9A1C0F242D5A026000ABCDEF /* nyt_best_movies_21st_century.csv */,
+				9A1C0F252D5A026000ABCDEF /* afi_top_100_2007.csv */,
+			);
+			path = Data;
 			sourceTree = "<group>";
 		};
 		840A1B672B5D1F2200721F12 /* ViewModels */ = {
@@ -179,6 +221,8 @@
 			files = (
 				840A1B582B5D1E7C00721F12 /* Preview Assets.xcassets in Resources */,
 				840A1B552B5D1E7C00721F12 /* Assets.xcassets in Resources */,
+				9A1C0F262D5A026000ABCDEF /* nyt_best_movies_21st_century.csv in Resources */,
+				9A1C0F272D5A026000ABCDEF /* afi_top_100_2007.csv in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -190,6 +234,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				840A1B662B5D1F1800721F12 /* Movie.swift in Sources */,
+				9A1C0F1F2D5A00A000ABCDEF /* MovieList.swift in Sources */,
 				840A1B722B5D1F7500721F12 /* WatchlistView.swift in Sources */,
 				840A1B692B5D1F2D00721F12 /* MovieViewModel.swift in Sources */,
 				840A1B532B5D1E7A00721F12 /* ContentView.swift in Sources */,
@@ -200,6 +245,9 @@
 				840A1B512B5D1E7A00721F12 /* CineFileApp.swift in Sources */,
 				840A1B742B5D1F8300721F12 /* SearchView.swift in Sources */,
 				840A1B772B5D1FBB00721F12 /* MovieListsView.swift in Sources */,
+				9A1C0F1B2D5A000100ABCDEF /* NYTimes100BestData.swift in Sources */,
+				9A1C0F1D2D5A001000ABCDEF /* TMDBService.swift in Sources */,
+				9A1C0F232D5A01E000ABCDEF /* CSVImporter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,52 +1,9 @@
 import Foundation
 import Combine
 import SwiftUI
+import os.log
 
-// Add MovieList struct directly in the file since the import seems to be failing
-struct MovieList: Identifiable, Codable, Equatable {
-    var id: String
-    var name: String
-    var description: String
-    var source: String // e.g., "NYTimes", "AFI", etc.
-    var year: Int // Year the list was published
-    var movieIDs: [String] // IDs of movies in this list
-    
-    // Optional fields
-    var imageURL: String?
-    var sourceURL: String?
-    
-    // Computed property to get completion percentage
-    var completionPercentage: Double {
-        0.0 // This will be implemented based on watched status of movies
-    }
-    
-    static func == (lhs: MovieList, rhs: MovieList) -> Bool {
-        lhs.id == rhs.id
-    }
-    
-    // NY Times 100 Best Movies of the 21st Century sample data
-    static var nyTimes100BestOf21stCentury: MovieList {
-        MovieList(
-            id: "nytimes-100-21st-century",
-            name: "NYTimes 100 Best Movies of the 21st Century",
-            description: "The New York Times' critics rank the 100 greatest movies of the 21st century.",
-            source: "The New York Times",
-            year: 2025,
-            movieIDs: [], // Will be populated when we create the actual movies
-            sourceURL: "https://www.nytimes.com/interactive/2025/movies/best-movies-21st-century.html"
-        )
-    }
-}
-
-// Add MovieSortOption enum directly in the file
-enum MovieSortOption: String, CaseIterable {
-    case listRank = "List Ranking"
-    case title = "Title"
-    case year = "Year"
-    case director = "Director"
-    case criticRating = "Critic Rating"
-    case userRating = "My Rating"
-}
+// Using MovieList and MovieSortOption from Models/MovieList.swift
 
 class MovieViewModel: ObservableObject {
     @Published var movies: [Movie] = []
@@ -58,21 +15,26 @@ class MovieViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
     @Published var sortOption: MovieSortOption = .listRank
+    @Published var isImporting: Bool = false
+    @Published var importProgress: Double = 0.0
+    private let tmdb = TMDBService()
+    private let logger = Logger(subsystem: "com.cinefile.app", category: "MovieViewModel")
     
     init() {
-        // Create empty arrays temporarily to fix build issues
-        self.movies = []
-        
-        // Initialize with empty watchlist
+    // Initialize with empty lists
+    self.movies = []
         self.watchlist = []
         
         // Initialize available movie lists
         var nyTimesList = MovieList.nyTimes100BestOf21stCentury
-        // No need to filter movie IDs from an empty array
-        self.movieLists = [nyTimesList]
+    self.movieLists = [nyTimesList]
         
         // Set the default selected list
         selectList(nyTimesList.id)
+
+    // Seed with static NYTimes sample data so UI has content immediately
+    self.movies = Movie.nyTimes100Best21stCentury
+    self.updateSelectedListMovies()
     }
     
     // MARK: - List Management
@@ -188,20 +150,20 @@ class MovieViewModel: ObservableObject {
             searchResults = []
             return
         }
-        
+
         isLoading = true
         errorMessage = nil
-        
-        // Search across all movies, not just the current list
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.searchResults = self.movies.filter { 
-                $0.title.lowercased().contains(query.lowercased()) ||
-                $0.director.lowercased().contains(query.lowercased()) ||
-                $0.overview.lowercased().contains(query.lowercased()) ||
-                $0.genres.contains(where: { $0.lowercased().contains(query.lowercased()) }) ||
-                $0.cast.contains(where: { $0.lowercased().contains(query.lowercased()) })
+
+        Task { @MainActor in
+            do {
+                let results = try await tmdb.search(query: query)
+                self.searchResults = results
+                self.isLoading = false
+            } catch {
+                self.logger.error("Search failed: \(error.localizedDescription)")
+                self.errorMessage = error.localizedDescription
+                self.isLoading = false
             }
-            self.isLoading = false
         }
     }
     
@@ -223,5 +185,89 @@ class MovieViewModel: ObservableObject {
     
     func fetchMovieDetails(id: String) -> Movie? {
         return movies.first(where: { $0.id == id })
+    }
+
+    // MARK: - Importers
+
+    func importNYT21FromCSV() {
+        Task { @MainActor in
+            do {
+                let rows = try CSVImporter.loadNYT21(fileName: "nyt_best_movies_21st_century")
+                try await importList(rows: rows.map { ($0.rank, $0.title, $0.year) }, listID: "nytimes-100-21st-century")
+            } catch {
+                self.errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    func importAFIFromCSV() {
+        Task { @MainActor in
+            do {
+                let rows = try CSVImporter.loadAFI(fileName: "afi_top_100_2007")
+                try await importList(rows: rows.map { ($0.rank, $0.title, $0.year) }, listID: "afi-100-2007")
+            } catch {
+                self.errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func importList(rows: [(Int, String, Int)], listID: String) async throws {
+        isImporting = true
+        importProgress = 0
+        let total = max(rows.count, 1)
+        defer {
+            isImporting = false
+        }
+        var imported: [Movie] = []
+
+        try await withThrowingTaskGroup(of: Movie?.self) { group in
+            for (rank, title, year) in rows {
+                group.addTask { [tmdb] in
+                    // Query TMDB with title and year; pick best match
+                    let results = try await tmdb.search(query: title)
+                    if let movie = results.first(where: { $0.year == year }) ?? results.first {
+                        var m = movie
+                        m.listRankings[listID] = rank
+                        return m
+                    }
+                    return nil
+                }
+            }
+
+            var completed = 0
+            for try await maybe in group {
+                if let movie = maybe { imported.append(movie) }
+                completed += 1
+                let progress = Double(completed) / Double(total)
+                await MainActor.run { self.importProgress = progress }
+            }
+        }
+
+        // Merge into existing movies: prefer highest data richness by ID
+        for m in imported {
+            if let idx = movies.firstIndex(where: { $0.id == m.id }) {
+                var existing = movies[idx]
+                var merged = m
+                // Preserve local toggles
+                merged.watched = existing.watched
+                merged.inWatchlist = existing.inWatchlist
+                merged.userRating = existing.userRating
+                // Merge rankings
+                merged.listRankings.merge(existing.listRankings) { new, old in new }
+                movies[idx] = merged
+            } else {
+                movies.append(m)
+            }
+        }
+        updateSelectedListMovies()
+        if let list = movieLists.first(where: { $0.id == listID }) {
+            selectList(list.id)
+        } else {
+            // Add list metadata if missing
+            let listName = (listID == "nytimes-100-21st-century") ? "NYTimes 100 Best Movies of the 21st Century" : "AFI 100 Greatest Films (2007)"
+            let newList = MovieList(id: listID, name: listName, description: listName, source: listID.contains("afi") ? "AFI" : "The New York Times", year: listID.contains("nytimes") ? 2025 : 2007, movieIDs: [])
+            movieLists.append(newList)
+            selectList(newList.id)
+        }
     }
 }
