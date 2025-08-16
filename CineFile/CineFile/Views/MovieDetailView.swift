@@ -336,7 +336,8 @@ struct MovieRatingView: View {
 
     var body: some View {
         NavigationView {
-            VStack(alignment: .leading) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
                 // Header image (poster)
                 AsyncImage(url: URL(string: movie.posterURL)) { phase in
                     switch phase {
@@ -360,6 +361,7 @@ struct MovieRatingView: View {
                 Text(movie.title)
                     .font(.title2)
                     .fontWeight(.bold)
+                    .multilineTextAlignment(.leading)
 
                 Text("\(movie.year) • \(movie.director)")
                     .font(.subheadline)
@@ -367,22 +369,10 @@ struct MovieRatingView: View {
 
                 Text("Tap to Rate (half-stars)")
                     .font(.headline)
-                    .padding(.top)
 
-                // Star rating in 0.5 increments (0..10)
-                HStack(spacing: 8) {
-                    ForEach(0..<20, id: \.self) { idx in
-                        let value = Double(idx + 1) * 0.5
-                        let symbol = userRating >= value
-                            ? ((value.truncatingRemainder(dividingBy: 1.0) == 0) ? "star.fill" : "star.leadinghalf.filled")
-                            : "star"
-                        Image(systemName: symbol)
-                            .font(.title2)
-                            .foregroundColor(userRating >= value ? .yellow : .gray)
-                            .onTapGesture { userRating = value }
-                    }
-                }
-                .padding()
+                // Ten stars with half-star tap detection
+                StarRatingView(rating: $userRating)
+                    .padding(.vertical, 4)
 
                 Text(String(format: "Your Rating: %.1f / 10", userRating))
                     .font(.title3)
@@ -405,10 +395,10 @@ struct MovieRatingView: View {
                         )
                     }
                 }
-                .padding(.top)
-
-                Spacer()
+                }
+                // end main VStack
             }
+            // end ScrollView
             .padding()
             .navigationTitle("Rate This Movie")
             .navigationBarTitleDisplayMode(.inline)
@@ -426,5 +416,57 @@ struct MovieRatingView: View {
                 }
             )
         }
+    }
+}
+
+// MARK: - Compact 10-star rating with half-star taps
+private struct StarRatingView: View {
+    @Binding var rating: Double // 0...10 in 0.5 steps
+    var maxStars: Int = 10
+    var starSize: CGFloat = 26
+    var spacing: CGFloat = 6
+
+    var body: some View {
+        HStack(spacing: spacing) {
+            ForEach(0..<maxStars, id: \.self) { index in
+                StarView(index: index, rating: $rating)
+                    .frame(width: starSize, height: starSize)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Rating")
+        .accessibilityValue(String(format: "%.1f out of 10", rating))
+    }
+}
+
+private struct StarView: View {
+    let index: Int
+    @Binding var rating: Double
+
+    var body: some View {
+        let fullThreshold = Double(index) + 1.0
+        let symbol = rating >= fullThreshold
+            ? "star.fill"
+            : (rating >= fullThreshold - 0.5 ? "star.leadinghalf.filled" : "star")
+
+        Image(systemName: symbol)
+            .font(.title2)
+            .foregroundColor((rating >= fullThreshold - 0.5) ? .yellow : .gray)
+            .overlay(
+                GeometryReader { geo in
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onEnded { value in
+                                    let half: Double = value.location.x < geo.size.width / 2 ? 0.5 : 1.0
+                                    var newRating = Double(index) + half
+                                    // Clamp between 0 and 10
+                                    newRating = max(0, min(10, newRating))
+                                    rating = newRating
+                                }
+                        )
+                }
+            )
     }
 }
