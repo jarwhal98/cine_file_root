@@ -310,18 +310,16 @@ struct MovieDetailView: View {
         }
         .edgesIgnoringSafeArea(.top)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    isShowingRatingSheet = true
-                } label: {
-                    HStack {
-                        Image(systemName: "star.fill")
-                        Text("Rate")
-                    }
+        .navigationBarItems(trailing:
+            Button {
+                isShowingRatingSheet = true
+            } label: {
+                HStack {
+                    Image(systemName: "star.fill")
+                    Text("Rate")
                 }
             }
-        }
+        )
         .sheet(isPresented: $isShowingRatingSheet) {
             MovieRatingView(movie: updatedMovie, userRating: $userRating, isPresented: $isShowingRatingSheet)
         }
@@ -335,17 +333,19 @@ struct MovieRatingView: View {
     @EnvironmentObject var viewModel: MovieViewModel
     @State private var watchedDate: Date? = nil
     @State private var tempDate: Date = Date()
-    
+
     var body: some View {
         NavigationView {
-            VStack(spacing: 20) {
+            VStack(alignment: .leading) {
+                // Header image (poster)
                 AsyncImage(url: URL(string: movie.posterURL)) { phase in
                     switch phase {
                     case .success(let image):
                         image
                             .resizable()
-                            .aspectRatio(contentMode: .fit)
+                            .aspectRatio(contentMode: .fill)
                             .frame(height: 200)
+                            .clipped()
                             .cornerRadius(8)
                     default:
                         RoundedRectangle(cornerRadius: 8)
@@ -356,29 +356,26 @@ struct MovieRatingView: View {
                 }
                 .frame(height: 200)
                 .padding(.top)
-                
+
                 Text(movie.title)
                     .font(.title2)
                     .fontWeight(.bold)
-                
+
                 Text("\(movie.year) • \(movie.director)")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
-                
+
                 Text("Tap to Rate (half-stars)")
                     .font(.headline)
                     .padding(.top)
-                
+
                 // Star rating in 0.5 increments (0..10)
                 HStack(spacing: 8) {
                     ForEach(0..<20, id: \.self) { idx in
                         let value = Double(idx + 1) * 0.5
-                        let symbol: String
-                        if userRating >= value {
-                            symbol = (value.truncatingRemainder(dividingBy: 1.0) == 0) ? "star.fill" : "star.leadinghalf.filled"
-                        } else {
-                            symbol = "star"
-                        }
+                        let symbol = userRating >= value
+                            ? ((value.truncatingRemainder(dividingBy: 1.0) == 0) ? "star.fill" : "star.leadinghalf.filled")
+                            : "star"
                         Image(systemName: symbol)
                             .font(.title2)
                             .foregroundColor(userRating >= value ? .yellow : .gray)
@@ -386,7 +383,7 @@ struct MovieRatingView: View {
                     }
                 }
                 .padding()
-                
+
                 Text(String(format: "Your Rating: %.1f / 10", userRating))
                     .font(.title3)
                     .fontWeight(.semibold)
@@ -398,39 +395,36 @@ struct MovieRatingView: View {
                         set: { on in watchedDate = on ? tempDate : nil }
                     ))
                     if watchedDate != nil {
-                        DatePicker("Watched on", selection: Binding(get: { watchedDate ?? tempDate }, set: { d in watchedDate = d; tempDate = d }), displayedComponents: .date)
+                        DatePicker(
+                            "Watched on",
+                            selection: Binding(
+                                get: { watchedDate ?? tempDate },
+                                set: { d in watchedDate = d; tempDate = d }
+                            ),
+                            displayedComponents: .date
+                        )
                     }
                 }
                 .padding(.top)
-                
+
                 Spacer()
             }
             .padding()
             .navigationTitle("Rate This Movie")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        isPresented = false
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        if userRating > 0 {
-                            viewModel.rateMovie(movie, rating: userRating)
+            .navigationBarItems(
+                leading: Button("Cancel") { isPresented = false },
+                trailing: Button("Save") {
+                    if userRating > 0 { viewModel.rateMovie(movie, rating: userRating) }
+                    if let d = watchedDate {
+                        if viewModel.fetchMovieDetails(id: movie.id)?.watched == false {
+                            viewModel.toggleWatched(for: movie)
                         }
-                        if let d = watchedDate {
-                            // ensure watched is toggled on and store date
-                            if viewModel.fetchMovieDetails(id: movie.id)?.watched == false {
-                                viewModel.toggleWatched(for: movie)
-                            }
-                            viewModel.setWatchedDate(for: movie, date: d)
-                        }
-                        isPresented = false
+                        viewModel.setWatchedDate(for: movie, date: d)
                     }
+                    isPresented = false
                 }
-            }
+            )
         }
     }
 }

@@ -28,7 +28,7 @@ class MovieViewModel: ObservableObject {
         self.watchlist = []
         
         // Initialize available movie lists
-        var nyTimesList = MovieList.nyTimes100BestOf21stCentury
+    let nyTimesList = MovieList.nyTimes100BestOf21stCentury
     self.movieLists = [nyTimesList]
         
         // Restore sort option & selected list if available
@@ -301,7 +301,7 @@ class MovieViewModel: ObservableObject {
 
         // Prime initial batch
         for _ in 0..<min(maxConcurrent, rows.count) { launchNext() }
-        while !inFlight.isEmpty {
+    while !inFlight.isEmpty {
             let finished = await withTaskGroup(of: (Int, Movie?).self) { group -> [(Int, Movie?)] in
                 for (i, t) in inFlight.enumerated() {
                     group.addTask { (i, try? await t.value) }
@@ -313,8 +313,9 @@ class MovieViewModel: ObservableObject {
             inFlight.removeAll()
             for (_, maybe) in finished {
                 if let movie = maybe { imported.append(movie) }
-                completed += 1
-                await MainActor.run { self.importProgress = Double(completed) / Double(total) }
+        completed += 1
+        let progress = Double(completed) / Double(total)
+        await MainActor.run { self.importProgress = progress }
                 if importCancelled {
                     inFlight.removeAll()
                     break
@@ -327,7 +328,7 @@ class MovieViewModel: ObservableObject {
         // Merge into existing movies: prefer highest data richness by ID
         for m in imported {
             if let idx = movies.firstIndex(where: { $0.id == m.id }) {
-                var existing = movies[idx]
+                let existing = movies[idx]
                 var merged = m
                 // Preserve local toggles
                 merged.watched = existing.watched
