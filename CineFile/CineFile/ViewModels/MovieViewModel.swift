@@ -16,6 +16,7 @@ class MovieViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
     @Published var sortOption: MovieSortOption = .listRank
+    @Published var sortAscending: Bool = true // true = baseline direction, false = reversed
     @Published var isImporting: Bool = false
     @Published var importProgress: Double = 0.0
     @Published var importCancelled: Bool = false
@@ -34,6 +35,9 @@ class MovieViewModel: ObservableObject {
         // Restore sort option & selected list if available
         if let savedSort = UserDefaults.standard.string(forKey: "sortOption"), let parsed = MovieSortOption(rawValue: savedSort) {
             sortOption = parsed
+        }
+        if UserDefaults.standard.object(forKey: "sortAscending") != nil {
+            sortAscending = UserDefaults.standard.bool(forKey: "sortAscending")
         }
         if let savedListID = UserDefaults.standard.string(forKey: "selectedListID") {
             selectList(savedListID)
@@ -82,14 +86,17 @@ class MovieViewModel: ObservableObject {
             }
         }()
         
-        // Sort according to current sort option
-        selectedListMovies = sortMovies(listMovies, by: sortOption, in: list.id)
+    // Sort according to current sort option and direction
+    selectedListMovies = sortMovies(listMovies, by: sortOption, in: list.id)
     }
     
     func sortMovies(_ moviesToSort: [Movie], by option: MovieSortOption, in listID: String) -> [Movie] {
+        // Baseline sorting for each option; some baselines are ascending (rank/title/year/director),
+        // others are descending (critic/user rating). We reverse the baseline when sortAscending == false.
+        let baselineSorted: [Movie]
         switch option {
         case .listRank:
-            return moviesToSort.sorted {
+            baselineSorted = moviesToSort.sorted {
                 let lhsRank = (listID == Self.allListsID) ? ($0.listRankings.values.min() ?? 9999) : $0.listRankings[listID, default: 9999]
                 let rhsRank = (listID == Self.allListsID) ? ($1.listRankings.values.min() ?? 9999) : $1.listRankings[listID, default: 9999]
                 if lhsRank == rhsRank {
@@ -102,15 +109,17 @@ class MovieViewModel: ObservableObject {
                 return lhsRank < rhsRank
             }
         case .title:
-            return moviesToSort.sorted { $0.title < $1.title }
+            baselineSorted = moviesToSort.sorted { $0.title < $1.title }
         case .year:
-            return moviesToSort.sorted { $0.year < $1.year }
+            baselineSorted = moviesToSort.sorted { $0.year < $1.year }
         case .director:
-            return moviesToSort.sorted { $0.directorLastName < $1.directorLastName }
+            baselineSorted = moviesToSort.sorted { $0.directorLastName < $1.directorLastName }
         case .criticRating:
-            return moviesToSort.sorted { $0.criticRating > $1.criticRating }
+            // Baseline: highest first
+            baselineSorted = moviesToSort.sorted { $0.criticRating > $1.criticRating }
         case .userRating:
-            return moviesToSort.sorted { 
+            // Baseline: highest first (rated items first)
+            baselineSorted = moviesToSort.sorted { 
                 guard let rating0 = $0.userRating, let rating1 = $1.userRating else {
                     if $0.userRating != nil { return true }
                     if $1.userRating != nil { return false }
@@ -119,12 +128,32 @@ class MovieViewModel: ObservableObject {
                 return rating0 > rating1
             }
         }
+        // Reverse if toggled off baseline
+        return sortAscending ? baselineSorted : baselineSorted.reversed()
     }
     
     func setSortOption(_ option: MovieSortOption) {
-        sortOption = option
-    UserDefaults.standard.set(option.rawValue, forKey: "sortOption")
+        if option == sortOption {
+            // Toggle direction
+            sortAscending.toggle()
+            UserDefaults.standard.set(sortAscending, forKey: "sortAscending")
+        } else {
+            sortOption = option
+            UserDefaults.standard.set(option.rawValue, forKey: "sortOption")
+            // Keep current direction as-is to avoid surprise
+        }
         updateSelectedListMovies()
+    }
+
+    // For UI: whether the effective current order is ascending visually for a given option
+    func isEffectiveAscending(for option: MovieSortOption) -> Bool {
+        switch option {
+        case .criticRating, .userRating:
+            // Baseline is descending; invert
+            return !sortAscending
+        default:
+            return sortAscending
+        }
     }
     
     // MARK: - Movie Management

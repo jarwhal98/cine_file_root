@@ -11,14 +11,11 @@ struct MovieListsView: View {
                 if let selectedList = viewModel.selectedList {
                     VStack(spacing: 16) {
                         // List title and selection button
-                        Button(action: {
-                            showingListSelector = true
-                        }) {
+                        Button(action: { showingListSelector = true }) {
                             HStack {
                                 Text(selectedList.name)
                                     .font(.headline)
                                     .lineLimit(1)
-                                
                                 Image(systemName: "chevron.down")
                                     .font(.caption)
                             }
@@ -27,20 +24,16 @@ struct MovieListsView: View {
                             .background(Color(.systemGray6))
                             .cornerRadius(20)
                         }
-                        
                         // Progress indicator
                         let (watched, total) = viewModel.calculateListCompletion(for: selectedList.id)
                         let progress = viewModel.calculateListProgress(for: selectedList.id)
-                        
                         VStack(spacing: 8) {
-                            // Progress bar
                             GeometryReader { geometry in
                                 ZStack(alignment: .leading) {
                                     Rectangle()
                                         .foregroundColor(Color(.systemGray5))
                                         .frame(width: geometry.size.width, height: 8)
                                         .cornerRadius(4)
-                                    
                                     Rectangle()
                                         .foregroundColor(Color.red)
                                         .frame(width: geometry.size.width * CGFloat(progress), height: 8)
@@ -48,8 +41,6 @@ struct MovieListsView: View {
                                 }
                             }
                             .frame(height: 8)
-                            
-                            // Completion text
                             Text("\(watched) of \(total) watched (\(Int(progress * 100))%)")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
@@ -59,27 +50,30 @@ struct MovieListsView: View {
                     .padding(.vertical, 16)
                     .background(Color(.systemBackground))
                     .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 2)
-                    
-                    // Sort options
+                    // Sort options with direction toggle
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
+                        HStack(spacing: 8) {
                             ForEach(MovieSortOption.allCases, id: \.self) { option in
-                                Button(action: {
-                                    viewModel.setSortOption(option)
-                                }) {
-                                    Text(option.rawValue)
-                                        .font(.caption)
-                                        .fontWeight(viewModel.sortOption == option ? .bold : .regular)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(
-                                            viewModel.sortOption == option ?
-                                                Color.red.opacity(0.2) :
-                                                Color(.systemGray6)
-                                        )
-                                        .cornerRadius(15)
-                                        .foregroundColor(viewModel.sortOption == option ? .red : .primary)
+                                Button(action: { viewModel.setSortOption(option) }) {
+                                    HStack(spacing: 4) {
+                                        Text(option.rawValue)
+                                            .font(.subheadline)
+                                            .fontWeight(viewModel.sortOption == option ? .semibold : .regular)
+                                        if viewModel.sortOption == option {
+                                            Text(viewModel.isEffectiveAscending(for: option) ? "▲" : "▼")
+                                                .font(.caption2)
+                                                .accessibilityHidden(true)
+                                        }
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(viewModel.sortOption == option ? Color.accentColor.opacity(0.15) : Color.secondary.opacity(0.12))
+                                    .foregroundColor(viewModel.sortOption == option ? Color.accentColor : Color.primary)
+                                    .cornerRadius(10)
+                                    .contentShape(Rectangle())
                                 }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Sort by \(option.rawValue) \(viewModel.isEffectiveAscending(for: option) ? "ascending" : "descending")")
                             }
                         }
                         .padding(.horizontal)
@@ -87,12 +81,12 @@ struct MovieListsView: View {
                     }
                     .background(Color(.systemBackground))
                 }
-                
+
                 // Movie list
                 List {
                     ForEach(viewModel.selectedListMovies) { movie in
                         NavigationLink(destination: MovieDetailView(movie: movie)) {
-                            MovieListRowView(movie: movie, toggleSeen: {
+                            MovieListRowView(movie: movie, listID: viewModel.selectedList?.id, toggleSeen: {
                                 viewModel.toggleWatched(for: movie)
                             })
                         }
@@ -100,7 +94,7 @@ struct MovieListsView: View {
                             Button {
                                 viewModel.toggleWatchlist(for: movie)
                             } label: {
-                                Label(movie.inWatchlist ? "Remove" : "Watchlist", 
+                                Label(movie.inWatchlist ? "Remove" : "Watchlist",
                                       systemImage: movie.inWatchlist ? "bookmark.slash" : "bookmark")
                             }
                             .tint(.blue)
@@ -109,7 +103,7 @@ struct MovieListsView: View {
                             Button {
                                 viewModel.toggleWatched(for: movie)
                             } label: {
-                                Label(movie.watched ? "Unwatched" : "Watched", 
+                                Label(movie.watched ? "Unwatched" : "Watched",
                                       systemImage: movie.watched ? "eye.slash" : "eye")
                             }
                             .tint(.green)
@@ -129,17 +123,28 @@ struct MovieListsView: View {
 
 struct MovieListRowView: View {
     let movie: Movie
+    var listID: String? = nil
     var toggleSeen: (() -> Void)? = nil
     
     var body: some View {
         HStack(spacing: 15) {
-            // Rank indicator (if available)
-            if let rank = movie.listRankings.values.first {
+            // Rank indicator (prefer rank for selected list; fallback to best rank across lists)
+            let rankValue: Int? = {
+                if let id = listID, id != MovieViewModel.allListsID {
+                    return movie.listRankings[id]
+                } else {
+                    return movie.listRankings.values.min()
+                }
+            }()
+            if let rank = rankValue {
                 Text("#\(rank)")
-                    .font(.headline)
-                    .fontWeight(.bold)
-                    .frame(width: 30)
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .frame(width: 44, alignment: .trailing)
                     .foregroundColor(.red)
+                    .accessibilityLabel("Rank \(rank)")
             }
             
             // Movie poster
