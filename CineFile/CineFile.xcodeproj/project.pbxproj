@@ -19,6 +19,7 @@
 		840A1B722B5D1F7500721F12 /* WatchlistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840A1B712B5D1F7500721F12 /* WatchlistView.swift */; };
 		840A1B742B5D1F8300721F12 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840A1B732B5D1F8300721F12 /* SearchView.swift */; };
 		840A1B762B5D1F9100721F12 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840A1B752B5D1F9100721F12 /* SettingsView.swift */; };
+	840A1B772B5D1FBB00721F12 /* MovieListsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840A1B7A2B5D1FBB00721F12 /* MovieListsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +37,7 @@
 		840A1B712B5D1F7500721F12 /* WatchlistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistView.swift; sourceTree = "<group>"; };
 		840A1B732B5D1F8300721F12 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		840A1B752B5D1F9100721F12 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+	840A1B7A2B5D1FBB00721F12 /* MovieListsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieListsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,6 +115,7 @@
 				840A1B712B5D1F7500721F12 /* WatchlistView.swift */,
 				840A1B732B5D1F8300721F12 /* SearchView.swift */,
 				840A1B752B5D1F9100721F12 /* SettingsView.swift */,
+				840A1B7A2B5D1FBB00721F12 /* MovieListsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -196,6 +199,7 @@
 				840A1B6C2B5D1F4400721F12 /* MovieListView.swift in Sources */,
 				840A1B512B5D1E7A00721F12 /* CineFileApp.swift in Sources */,
 				840A1B742B5D1F8300721F12 /* SearchView.swift in Sources */,
+				840A1B772B5D1FBB00721F12 /* MovieListsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -325,6 +329,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"CineFile/Preview Content\"";
+				DEVELOPMENT_TEAM = MABBKY5A9T;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = CineFile/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
@@ -346,6 +351,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"CineFile/Preview Content\"";
+				DEVELOPMENT_TEAM = MABBKY5A9T;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = CineFile/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;

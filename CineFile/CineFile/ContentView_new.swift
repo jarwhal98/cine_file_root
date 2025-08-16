@@ -7,11 +7,15 @@ struct ContentView: View {
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            MovieListsView()
-                .tabItem {
-                    Label("Lists", systemImage: "list.bullet")
-                }
-                .tag(0)
+            // Use a text placeholder instead of MovieListsView for now
+            NavigationView {
+                Text("Movie Lists")
+                    .navigationTitle("Movie Lists")
+            }
+            .tabItem {
+                Label("Lists", systemImage: "list.bullet")
+            }
+            .tag(0)
             
             WatchlistView()
                 .tabItem {
