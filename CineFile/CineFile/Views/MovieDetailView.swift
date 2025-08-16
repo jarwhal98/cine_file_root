@@ -5,6 +5,14 @@ struct MovieDetailView: View {
     let movie: Movie
     
     @State private var isShowingRatingSheet = false
+    @State private var userRating: Double = 0
+    @State private var updatedMovie: Movie
+    
+    init(movie: Movie) {
+        self.movie = movie
+        self._updatedMovie = State(initialValue: movie)
+        self._userRating = State(initialValue: movie.userRating ?? 0)
+    }
     
     var body: some View {
         ScrollView {
@@ -12,7 +20,7 @@ struct MovieDetailView: View {
                 // Header with poster and basic info
                 ZStack(alignment: .bottom) {
                     // Background image (blurred poster)
-                    AsyncImage(url: URL(string: movie.posterURL)) { phase in
+                    AsyncImage(url: URL(string: updatedMovie.posterURL)) { phase in
                         switch phase {
                         case .success(let image):
                             image
@@ -39,7 +47,7 @@ struct MovieDetailView: View {
                     // Movie info overlay
                     HStack(alignment: .bottom, spacing: 15) {
                         // Poster
-                        AsyncImage(url: URL(string: movie.posterURL)) { phase in
+                        AsyncImage(url: URL(string: updatedMovie.posterURL)) { phase in
                             switch phase {
                             case .empty:
                                 RoundedRectangle(cornerRadius: 8)
@@ -66,26 +74,54 @@ struct MovieDetailView: View {
                         
                         // Title and basic info
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(movie.title)
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-                            
-                            Text("\(movie.year) • \(movie.runtime) min")
-                                .font(.subheadline)
-                                .foregroundColor(.white.opacity(0.8))
-                            
-                            Text(movie.director)
-                                .font(.subheadline)
-                                .foregroundColor(.white.opacity(0.8))
-                            
-                            // Rating
                             HStack {
-                                Image(systemName: "star.fill")
-                                    .foregroundColor(.yellow)
-                                Text(String(format: "%.1f", movie.rating))
-                                    .fontWeight(.semibold)
+                                Text(updatedMovie.title)
+                                    .font(.title2)
+                                    .fontWeight(.bold)
                                     .foregroundColor(.white)
+                                
+                                // Show rank if this movie is part of a list
+                                if let listID = viewModel.selectedList?.id,
+                                   let rank = updatedMovie.listRankings[listID] {
+                                    Text("#\(rank)")
+                                        .font(.subheadline)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 2)
+                                        .background(Color.red.opacity(0.7))
+                                        .cornerRadius(4)
+                                        .foregroundColor(.white)
+                                }
+                            }
+                            
+                            Text("\(updatedMovie.year) • \(updatedMovie.runtime) min")
+                                .font(.subheadline)
+                                .foregroundColor(.white.opacity(0.8))
+                            
+                            Text(updatedMovie.director)
+                                .font(.subheadline)
+                                .foregroundColor(.white.opacity(0.8))
+                            
+                            // Ratings
+                            HStack {
+                                // Critic rating
+                                HStack {
+                                    Image(systemName: "star.fill")
+                                        .foregroundColor(.yellow)
+                                    Text(String(format: "%.1f", updatedMovie.criticRating))
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.white)
+                                }
+                                
+                                // User rating if available
+                                if updatedMovie.userRating != nil {
+                                    HStack {
+                                        Image(systemName: "person.fill.checkmark")
+                                            .foregroundColor(.orange)
+                                        Text(String(format: "%.1f", updatedMovie.userRating!))
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(.white)
+                                    }
+                                }
                                 
                                 Button {
                                     isShowingRatingSheet = true
@@ -109,24 +145,26 @@ struct MovieDetailView: View {
                 // Action buttons
                 HStack(spacing: 20) {
                     Button {
-                        viewModel.toggleWatchlist(for: movie)
+                        viewModel.toggleWatchlist(for: updatedMovie)
+                        updatedMovie.inWatchlist.toggle()
                     } label: {
                         VStack {
-                            Image(systemName: movie.inWatchlist ? "bookmark.fill" : "bookmark")
+                            Image(systemName: updatedMovie.inWatchlist ? "bookmark.fill" : "bookmark")
                                 .font(.title2)
-                            Text(movie.inWatchlist ? "In Watchlist" : "Add to Watchlist")
+                            Text(updatedMovie.inWatchlist ? "In Watchlist" : "Add to Watchlist")
                                 .font(.caption)
                         }
                         .frame(maxWidth: .infinity)
                     }
                     
                     Button {
-                        viewModel.toggleWatched(for: movie)
+                        viewModel.toggleWatched(for: updatedMovie)
+                        updatedMovie.watched.toggle()
                     } label: {
                         VStack {
-                            Image(systemName: movie.watched ? "eye.fill" : "eye")
+                            Image(systemName: updatedMovie.watched ? "eye.fill" : "eye")
                                 .font(.title2)
-                            Text(movie.watched ? "Watched" : "Mark as Watched")
+                            Text(updatedMovie.watched ? "Watched" : "Mark as Watched")
                                 .font(.caption)
                         }
                         .frame(maxWidth: .infinity)
@@ -166,12 +204,61 @@ struct MovieDetailView: View {
                     Text("Overview")
                         .font(.headline)
                     
-                    Text(movie.overview)
+                    Text(updatedMovie.overview)
                         .font(.body)
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.horizontal)
+                
+                // Cast section (if available)
+                if !updatedMovie.cast.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Cast")
+                            .font(.headline)
+                        
+                        Text(updatedMovie.cast.joined(separator: ", "))
+                            .font(.body)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal)
+                }
+                
+                // Lists this movie appears on
+                if !updatedMovie.listRankings.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Featured In")
+                            .font(.headline)
+                        
+                        ForEach(viewModel.movieLists.filter { list in
+                            updatedMovie.listRankings.keys.contains(list.id)
+                        }, id: \.id) { list in
+                            if let rank = updatedMovie.listRankings[list.id] {
+                                HStack {
+                                    Text("#\(rank)")
+                                        .font(.subheadline)
+                                        .fontWeight(.bold)
+                                        .frame(width: 40)
+                                        .padding(.vertical, 4)
+                                        .padding(.horizontal, 8)
+                                        .background(Color.red.opacity(0.1))
+                                        .cornerRadius(4)
+                                    
+                                    Text(list.name)
+                                        .font(.subheadline)
+                                    
+                                    Spacer()
+                                    
+                                    Text(String(list.year))
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(.vertical, 4)
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                }
                 
                 // Similar movies would go here in a real app
                 VStack(alignment: .leading, spacing: 10) {
@@ -180,35 +267,38 @@ struct MovieDetailView: View {
                     
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 15) {
-                            ForEach(viewModel.movies.prefix(5)) { movie in
-                                VStack(alignment: .leading) {
-                                    AsyncImage(url: URL(string: movie.posterURL)) { phase in
-                                        switch phase {
-                                        case .success(let image):
-                                            image
-                                                .resizable()
-                                                .aspectRatio(contentMode: .fill)
-                                                .frame(width: 100, height: 150)
-                                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                        default:
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .fill(Color.gray.opacity(0.3))
-                                                .frame(width: 100, height: 150)
-                                                .overlay(Image(systemName: "photo"))
+                            ForEach(viewModel.movies.filter { $0.id != updatedMovie.id }.prefix(5)) { movie in
+                                NavigationLink(destination: MovieDetailView(movie: movie)) {
+                                    VStack(alignment: .leading) {
+                                        AsyncImage(url: URL(string: movie.posterURL)) { phase in
+                                            switch phase {
+                                            case .success(let image):
+                                                image
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fill)
+                                                    .frame(width: 100, height: 150)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            default:
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(Color.gray.opacity(0.3))
+                                                    .frame(width: 100, height: 150)
+                                                    .overlay(Image(systemName: "photo"))
+                                            }
                                         }
+                                        .frame(width: 100, height: 150)
+                                        
+                                        Text(movie.title)
+                                            .font(.caption)
+                                            .lineLimit(1)
+                                            .frame(width: 100, alignment: .leading)
+                                        
+                                        Text(String(movie.year))
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
                                     }
-                                    .frame(width: 100, height: 150)
-                                    
-                                    Text(movie.title)
-                                        .font(.caption)
-                                        .lineLimit(1)
-                                        .frame(width: 100, alignment: .leading)
-                                    
-                                    Text(String(movie.year))
-                                        .font(.caption2)
-                                        .foregroundColor(.secondary)
+                                    .frame(width: 100)
                                 }
-                                .frame(width: 100)
+                                .buttonStyle(PlainButtonStyle())
                             }
                         }
                         .padding(.horizontal)
@@ -222,17 +312,99 @@ struct MovieDetailView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    // Edit movie action
+                    isShowingRatingSheet = true
                 } label: {
-                    Text("Edit")
+                    HStack {
+                        Image(systemName: "star.fill")
+                        Text("Rate")
+                    }
                 }
             }
         }
         .sheet(isPresented: $isShowingRatingSheet) {
-            // Rating sheet would be implemented here
-            Text("Rate this movie")
-                .font(.headline)
+            MovieRatingView(movie: updatedMovie, userRating: $userRating, isPresented: $isShowingRatingSheet)
+        }
+    }
+}
+
+struct MovieRatingView: View {
+    let movie: Movie
+    @Binding var userRating: Double
+    @Binding var isPresented: Bool
+    @EnvironmentObject var viewModel: MovieViewModel
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                AsyncImage(url: URL(string: movie.posterURL)) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(height: 200)
+                            .cornerRadius(8)
+                    default:
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(height: 200)
+                            .overlay(Image(systemName: "photo"))
+                    }
+                }
+                .frame(height: 200)
+                .padding(.top)
+                
+                Text(movie.title)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                Text("\(movie.year) • \(movie.director)")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                
+                Text("Tap to Rate")
+                    .font(.headline)
+                    .padding(.top)
+                
+                // Star rating
+                HStack(spacing: 12) {
+                    ForEach(1...10, id: \.self) { number in
+                        Image(systemName: number <= Int(userRating) ? "star.fill" : "star")
+                            .font(.title)
+                            .foregroundColor(number <= Int(userRating) ? .yellow : .gray)
+                            .onTapGesture {
+                                userRating = Double(number)
+                            }
+                    }
+                }
                 .padding()
+                
+                Text("Your Rating: \(Int(userRating)) / 10")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Rate This Movie")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        isPresented = false
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        if userRating > 0 {
+                            viewModel.rateMovie(movie, rating: userRating)
+                        }
+                        isPresented = false
+                    }
+                    .disabled(userRating == 0)
+                }
+            }
         }
     }
 }

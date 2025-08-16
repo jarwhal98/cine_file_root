@@ -1,17 +1,27 @@
 import Foundation
 
-struct Movie: Identifiable, Codable {
+struct Movie: Identifiable, Codable, Equatable {
     var id: String
     var title: String
     var year: Int
     var director: String
     var posterURL: String
     var overview: String
-    var rating: Double
-    var inWatchlist: Bool = false
+    var criticRating: Double // Critical rating (e.g. from NYTimes)
+    var userRating: Double? // User's personal rating
     var watched: Bool = false
+    var inWatchlist: Bool = false
     var genres: [String]
     var runtime: Int // in minutes
+    var cast: [String] = []
+    
+    // List rankings - key is list ID, value is rank in that list
+    var listRankings: [String: Int] = [:]
+    
+    static func == (lhs: Movie, rhs: Movie) -> Bool {
+        lhs.id == rhs.id
+    }
+}
     
     // Sample movie data for development
     static let sampleMovies = [
