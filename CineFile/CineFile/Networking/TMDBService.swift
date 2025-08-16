@@ -56,10 +56,10 @@ final class TMDBService {
         return req
     }
 
-    func search(query: String, year: Int? = nil, includeDetails: Bool = true) async throws -> [Movie] {
+    func search(query: String, year: Int? = nil, includeDetails: Bool = true, includeAdult: Bool = false) async throws -> [Movie] {
         var items = [
             URLQueryItem(name: "query", value: query),
-            URLQueryItem(name: "include_adult", value: "false"),
+            URLQueryItem(name: "include_adult", value: includeAdult ? "true" : "false"),
             URLQueryItem(name: "language", value: "en-US"),
             URLQueryItem(name: "page", value: "1")
         ]

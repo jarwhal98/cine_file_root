@@ -92,7 +92,9 @@ struct MovieListsView: View {
                 List {
                     ForEach(viewModel.selectedListMovies) { movie in
                         NavigationLink(destination: MovieDetailView(movie: movie)) {
-                            MovieListRowView(movie: movie)
+                            MovieListRowView(movie: movie, toggleSeen: {
+                                viewModel.toggleWatched(for: movie)
+                            })
                         }
                         .swipeActions(edge: .trailing) {
                             Button {
@@ -127,6 +129,7 @@ struct MovieListsView: View {
 
 struct MovieListRowView: View {
     let movie: Movie
+    var toggleSeen: (() -> Void)? = nil
     
     var body: some View {
         HStack(spacing: 15) {
@@ -184,6 +187,14 @@ struct MovieListRowView: View {
                 
                 // Status indicators
                 HStack(spacing: 10) {
+                    // Seen toggle (icon only)
+                    if let toggleSeen {
+                        Button(action: toggleSeen) {
+                            Image(systemName: movie.watched ? "eye.fill" : "eye")
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                    
                     // Critic rating
                     HStack(spacing: 2) {
                         Image(systemName: "star.fill")
@@ -245,6 +256,28 @@ struct ListSelectorView: View {
     var body: some View {
         NavigationView {
             List {
+                Button(action: {
+                    viewModel.selectList(MovieViewModel.allListsID)
+                    isPresented = false
+                }) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("All Lists")
+                                .font(.headline)
+                            let (watched, total) = viewModel.calculateListCompletion(for: MovieViewModel.allListsID)
+                            Text("\(watched)/\(total) watched • Combined")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        if viewModel.selectedList?.id == MovieViewModel.allListsID {
+                            Image(systemName: "checkmark")
+                                .foregroundColor(.red)
+                        }
+                    }
+                }
+                .padding(.vertical, 8)
+                
                 ForEach(viewModel.movieLists) { list in
                     Button(action: {
                         viewModel.selectList(list.id)

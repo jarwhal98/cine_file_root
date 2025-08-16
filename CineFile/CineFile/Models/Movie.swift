@@ -11,6 +11,7 @@ struct Movie: Identifiable, Codable, Equatable {
     var userRating: Double? // User's personal rating
     var watched: Bool = false
     var inWatchlist: Bool = false
+    var watchedDate: Date? = nil
     var genres: [String]
     var runtime: Int // in minutes
     var cast: [String] = []

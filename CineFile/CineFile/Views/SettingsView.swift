@@ -22,6 +22,9 @@ struct SettingsView: View {
                 
                 Section(header: Text("Content")) {
                     Toggle("Show Adult Content", isOn: $showAdultContent)
+                        .onChange(of: showAdultContent) { newValue in
+                            UserDefaults.standard.set(newValue, forKey: "showAdultContent")
+                        }
                     
                     Picker("Default Tab", selection: $defaultTab) {
                         Text("Movies").tag(0)
@@ -52,6 +55,9 @@ struct SettingsView: View {
                             Text("Importing... \(Int(viewModel.importProgress * 100))%")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
+                        }
+                        Button("Cancel Import") {
+                            viewModel.cancelImport()
                         }
                     } else {
                         Button("Import NYTimes 100 (21st Century)") {

@@ -6,6 +6,7 @@ import os.log
 // Using MovieList and MovieSortOption from Models/MovieList.swift
 
 class MovieViewModel: ObservableObject {
+    static let allListsID = "all-lists"
     @Published var movies: [Movie] = []
     @Published var watchlist: [Movie] = []
     @Published var searchResults: [Movie] = []
@@ -17,6 +18,7 @@ class MovieViewModel: ObservableObject {
     @Published var sortOption: MovieSortOption = .listRank
     @Published var isImporting: Bool = false
     @Published var importProgress: Double = 0.0
+    @Published var importCancelled: Bool = false
     private let tmdb = TMDBService()
     private let logger = Logger(subsystem: "com.cinefile.app", category: "MovieViewModel")
     
@@ -29,8 +31,16 @@ class MovieViewModel: ObservableObject {
         var nyTimesList = MovieList.nyTimes100BestOf21stCentury
     self.movieLists = [nyTimesList]
         
-        // Set the default selected list
-        selectList(nyTimesList.id)
+        // Restore sort option & selected list if available
+        if let savedSort = UserDefaults.standard.string(forKey: "sortOption"), let parsed = MovieSortOption(rawValue: savedSort) {
+            sortOption = parsed
+        }
+        if let savedListID = UserDefaults.standard.string(forKey: "selectedListID") {
+            selectList(savedListID)
+        } else {
+            // Set the default selected list
+            selectList(nyTimesList.id)
+        }
 
     // Seed with static NYTimes sample data so UI has content immediately
     self.movies = Movie.nyTimes100Best21stCentury
@@ -40,9 +50,20 @@ class MovieViewModel: ObservableObject {
     // MARK: - List Management
     
     func selectList(_ listID: String) {
-        guard let list = movieLists.first(where: { $0.id == listID }) else { return }
-        
-        selectedList = list
+        if listID == Self.allListsID {
+            selectedList = MovieList(
+                id: Self.allListsID,
+                name: "All Lists",
+                description: "Combined view of all lists",
+                source: "Combined",
+                year: Calendar.current.component(.year, from: Date()),
+                movieIDs: []
+            )
+        } else {
+            guard let list = movieLists.first(where: { $0.id == listID }) else { return }
+            selectedList = list
+        }
+    UserDefaults.standard.set(listID, forKey: "selectedListID")
         updateSelectedListMovies()
     }
     
@@ -52,10 +73,14 @@ class MovieViewModel: ObservableObject {
             return
         }
         
-        // Get movies that are part of this list
-        let listMovies = movies.filter { movie in
-            movie.listRankings.keys.contains(list.id)
-        }
+        // Get movies for this list (or all lists)
+        let listMovies: [Movie] = {
+            if list.id == Self.allListsID {
+                return movies.filter { !$0.listRankings.isEmpty }
+            } else {
+                return movies.filter { $0.listRankings.keys.contains(list.id) }
+            }
+        }()
         
         // Sort according to current sort option
         selectedListMovies = sortMovies(listMovies, by: sortOption, in: list.id)
@@ -64,8 +89,17 @@ class MovieViewModel: ObservableObject {
     func sortMovies(_ moviesToSort: [Movie], by option: MovieSortOption, in listID: String) -> [Movie] {
         switch option {
         case .listRank:
-            return moviesToSort.sorted { 
-                $0.listRankings[listID, default: 999] < $1.listRankings[listID, default: 999] 
+            return moviesToSort.sorted {
+                let lhsRank = (listID == Self.allListsID) ? ($0.listRankings.values.min() ?? 9999) : $0.listRankings[listID, default: 9999]
+                let rhsRank = (listID == Self.allListsID) ? ($1.listRankings.values.min() ?? 9999) : $1.listRankings[listID, default: 9999]
+                if lhsRank == rhsRank {
+                    // tie-breaker: sum of ranks, then title
+                    let lhsSum = $0.listRankings.values.reduce(0, +)
+                    let rhsSum = $1.listRankings.values.reduce(0, +)
+                    if lhsSum == rhsSum { return $0.title < $1.title }
+                    return lhsSum < rhsSum
+                }
+                return lhsRank < rhsRank
             }
         case .title:
             return moviesToSort.sorted { $0.title < $1.title }
@@ -89,6 +123,7 @@ class MovieViewModel: ObservableObject {
     
     func setSortOption(_ option: MovieSortOption) {
         sortOption = option
+    UserDefaults.standard.set(option.rawValue, forKey: "sortOption")
         updateSelectedListMovies()
     }
     
@@ -142,6 +177,19 @@ class MovieViewModel: ObservableObject {
             }
         }
     }
+
+    func setWatchedDate(for movie: Movie, date: Date) {
+        if let index = movies.firstIndex(where: { $0.id == movie.id }) {
+            movies[index].watchedDate = date
+            // mirror to watchlist/selected if present
+            if let watchlistIndex = watchlist.firstIndex(where: { $0.id == movie.id }) {
+                watchlist[watchlistIndex].watchedDate = date
+            }
+            if let listIndex = selectedListMovies.firstIndex(where: { $0.id == movie.id }) {
+                selectedListMovies[listIndex].watchedDate = date
+            }
+        }
+    }
     
     // MARK: - Search Methods
     
@@ -154,9 +202,10 @@ class MovieViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
 
-        Task { @MainActor in
+    Task { @MainActor in
             do {
-                let results = try await tmdb.search(query: query)
+        let includeAdult = UserDefaults.standard.bool(forKey: "showAdultContent")
+        let results = try await tmdb.search(query: query, year: nil, includeDetails: true, includeAdult: includeAdult)
                 self.searchResults = results
                 self.isLoading = false
             } catch {
@@ -170,7 +219,12 @@ class MovieViewModel: ObservableObject {
     // MARK: - List Completion
     
     func calculateListCompletion(for listID: String) -> (watched: Int, total: Int) {
-        let listMovies = movies.filter { $0.listRankings.keys.contains(listID) }
+        let listMovies: [Movie]
+        if listID == Self.allListsID {
+            listMovies = movies.filter { !$0.listRankings.isEmpty }
+        } else {
+            listMovies = movies.filter { $0.listRankings.keys.contains(listID) }
+        }
         let watchedCount = listMovies.filter { $0.watched }.count
         return (watchedCount, listMovies.count)
     }
@@ -192,6 +246,7 @@ class MovieViewModel: ObservableObject {
     func importNYT21FromCSV() {
         Task { @MainActor in
             do {
+                self.importCancelled = false
                 let rows = try CSVImporter.loadNYT21(fileName: "nyt_best_movies_21st_century")
                 try await importList(rows: rows.map { ($0.rank, $0.title, $0.year) }, listID: "nytimes-100-21st-century")
             } catch {
@@ -203,6 +258,7 @@ class MovieViewModel: ObservableObject {
     func importAFIFromCSV() {
         Task { @MainActor in
             do {
+                self.importCancelled = false
                 let rows = try CSVImporter.loadAFI(fileName: "afi_top_100_2007")
                 try await importList(rows: rows.map { ($0.rank, $0.title, $0.year) }, listID: "afi-100-2007")
             } catch {
@@ -212,7 +268,7 @@ class MovieViewModel: ObservableObject {
     }
 
     private func importList(rows: [(Int, String, Int)], listID: String) async throws {
-        isImporting = true
+    isImporting = true
         importProgress = 0
         let total = max(rows.count, 1)
         defer {
@@ -221,15 +277,17 @@ class MovieViewModel: ObservableObject {
         var imported: [Movie] = []
 
         // Limit concurrency to avoid timeouts/rate limits
-        let maxConcurrent = 6
+    let maxConcurrent = 6
         var iterator = rows.makeIterator()
         var inFlight: [Task<Movie?, Error>] = []
         var completed = 0
         func launchNext() {
+        if importCancelled { return }
             if let next = iterator.next() {
                 let (rank, title, year) = next
                 let task = Task<Movie?, Error> {
-                    let results = try await tmdb.search(query: title, year: year, includeDetails: false)
+            let includeAdult = UserDefaults.standard.bool(forKey: "showAdultContent")
+            let results = try await tmdb.search(query: title, year: year, includeDetails: false, includeAdult: includeAdult)
                     if let movie = results.first(where: { $0.year == year }) ?? results.first {
                         var m = movie
                         m.listRankings[listID] = rank
@@ -257,8 +315,13 @@ class MovieViewModel: ObservableObject {
                 if let movie = maybe { imported.append(movie) }
                 completed += 1
                 await MainActor.run { self.importProgress = Double(completed) / Double(total) }
+                if importCancelled {
+                    inFlight.removeAll()
+                    break
+                }
                 launchNext()
             }
+            if importCancelled { break }
         }
 
         // Merge into existing movies: prefer highest data richness by ID
@@ -287,5 +350,9 @@ class MovieViewModel: ObservableObject {
             movieLists.append(newList)
             selectList(newList.id)
         }
+    }
+
+    func cancelImport() {
+        importCancelled = true
     }
 }
