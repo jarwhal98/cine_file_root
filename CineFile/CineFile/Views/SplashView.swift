@@ -3,23 +3,39 @@ import SwiftUI
 struct SplashView: View {
     var onFinished: () -> Void
     @State private var appear = false
+    @State private var displayedText: String = ""
+    @State private var typeTimer: Timer?
+    private let fullTagline = "Cross off the classics, one reel at a time."
 
     var body: some View {
         GeometryReader { proxy in
             let w = proxy.size.width
             let h = proxy.size.height
-            let titleY = h * 0.28 // under the lamp, above the TV area
 
             ZStack {
                 // Background image (add your image as "splash_bg" in Assets)
                 Image("splash_bg")
                     .resizable()
                     .scaledToFill()
-                    .frame(width: w, height: h)
-                    .clipped()
                     .ignoresSafeArea()
 
-                // Gentle vignette/top gradient to ensure title contrast
+                // Soft overhead light cone from the top center to mimic the lamp
+                RadialGradient(
+                    colors: [
+                        Color.white.opacity(0.38),
+                        Color.white.opacity(0.16),
+                        Color.clear
+                    ],
+                    center: .init(x: 0.5, y: 0.02),
+                    startRadius: 8,
+                    endRadius: min(w, h) * 0.8
+                )
+                .compositingGroup()
+                .blendMode(.screen)
+                .ignoresSafeArea()
+                .zIndex(1)
+
+                // Gentle vignette/top gradient to ensure title contrast (above the light)
                 LinearGradient(
                     colors: [
                         Color.black.opacity(0.45),
@@ -31,52 +47,21 @@ struct SplashView: View {
                     endPoint: .center
                 )
                 .ignoresSafeArea()
+                .zIndex(2)
 
-                // Soft overhead light cone from the top center to mimic the lamp
-                RadialGradient(
-                    colors: [
-                        Color.white.opacity(0.28),
-                        Color.white.opacity(0.10),
-                        Color.clear
-                    ],
-                    center: .init(x: 0.5, y: 0.02),
-                    startRadius: 8,
-                    endRadius: min(w, h) * 0.8
-                )
-                .blendMode(.screen)
-                .ignoresSafeArea()
-
-                // Title using same font family as inline nav title (system San Francisco)
-                let titleFont = Font.system(size: 44, weight: .semibold, design: .default)
-                Text("CineFile")
-                    .font(titleFont)
-                    .foregroundColor(Color.white.opacity(0.92))
-                    // Downward shadow to emphasize overhead light
-                    .shadow(color: Color.black.opacity(0.60), radius: 14, x: 0, y: 18)
-                    .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 1)
-                    // Top-lit highlight inside text
-                    .overlay(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(0.95),
-                                Color.white.opacity(0.55),
-                                Color.white.opacity(0.10),
-                                Color.clear
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        .blendMode(.screen)
-                        .mask(
-                            Text("CineFile")
-                                .font(titleFont)
-                        )
-                    )
-                    .scaleEffect(appear ? 1.0 : 0.96)
-                    .opacity(appear ? 1.0 : 0.0)
-                    .animation(.spring(response: 0.6, dampingFraction: 0.85), value: appear)
-                    .accessibilityAddTraits(.isHeader)
-                    .position(x: w / 2, y: titleY)
+                // Centered tagline with SF Pro (non-serif), in requested color #AC9E79
+                let taglineFont = Font.system(size: 20, weight: .medium, design: .default)
+                let taglineColor = Color(red: 172/255, green: 158/255, blue: 121/255)
+                Text(displayedText)
+                    .font(taglineFont)
+                    .foregroundColor(taglineColor)
+                    .multilineTextAlignment(.center)
+                    .kerning(0.3)
+                    .shadow(color: Color.black.opacity(0.85), radius: 12, x: 0, y: 10)
+                    .shadow(color: Color.black.opacity(0.15), radius: 2, x: 0, y: 1)
+                    .frame(width: min(w * 0.82, 520))
+                    .position(x: w / 2, y: h / 2)
+                    .zIndex(3)
             }
             .contentShape(Rectangle())
             .gesture(
@@ -90,7 +75,27 @@ struct SplashView: View {
             .onTapGesture {
                 withAnimation(.easeOut(duration: 0.35)) { onFinished() }
             }
-            .onAppear { appear = true }
+            .onAppear {
+                appear = true
+                displayedText = ""
+                typeTimer?.invalidate()
+                var index = 0
+                typeTimer = Timer.scheduledTimer(withTimeInterval: 0.035, repeats: true) { timer in
+                    if index < fullTagline.count {
+                        let i = fullTagline.index(fullTagline.startIndex, offsetBy: index)
+                        displayedText.append(fullTagline[i])
+                        index += 1
+                    } else {
+                        timer.invalidate()
+                        typeTimer = nil
+                    }
+                }
+                if let typeTimer { RunLoop.main.add(typeTimer, forMode: .common) }
+            }
+            .onDisappear {
+                typeTimer?.invalidate()
+                typeTimer = nil
+            }
         }
     }
 }
