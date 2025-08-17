@@ -113,6 +113,7 @@ struct MovieListsView: View {
                             }
                             .tint(.green)
                             }
+                        } // end ForEach movies
                         } header: {
                             // Pinned header: just the list title button
                             Button(action: { showingListSelector = true }) {
