@@ -95,7 +95,8 @@ struct MovieDetailView: View {
                                 }
                             }
                             
-                            Text("\(updatedMovie.year) • \(updatedMovie.runtime) min")
+                            let headerYear = String(updatedMovie.year)
+                            Text(verbatim: "\(headerYear) • \(updatedMovie.runtime) min")
                                 .font(.subheadline)
                                 .foregroundColor(.white.opacity(0.8))
                             
@@ -296,7 +297,7 @@ struct MovieDetailView: View {
                                             .lineLimit(1)
                                             .frame(width: 100, alignment: .leading)
                                         
-                                        Text(String(movie.year))
+                                        Text(verbatim: String(movie.year))
                                             .font(.caption2)
                                             .foregroundColor(.secondary)
                                     }
@@ -368,7 +369,8 @@ struct MovieRatingView: View {
                     .fontWeight(.bold)
                     .multilineTextAlignment(.leading)
 
-                Text("\(movie.year) • \(movie.director)")
+                let sheetYear = String(movie.year)
+                Text(verbatim: movie.director.isEmpty ? sheetYear : "\(sheetYear) • \(movie.director)")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
 

@@ -271,7 +271,8 @@ struct MovieListRowView: View {
                     .foregroundColor(.primary)
                     .lineLimit(2)
                 
-                Text(movie.director.isEmpty ? "\(movie.year)" : "\(movie.year) • \(movie.director)")
+                let yearText = String(movie.year)
+                Text(verbatim: movie.director.isEmpty ? yearText : "\(yearText) • \(movie.director)")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
