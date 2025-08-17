@@ -121,6 +121,7 @@ struct SearchView: View {
             }
             .listStyle(PlainListStyle())
             .listRowSeparator(.hidden)
+            .listSectionSeparator(.hidden)
             .hideScrollBackground()
             .background(AppColors.background)
                 }

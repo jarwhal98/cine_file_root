@@ -12,11 +12,70 @@ struct MovieListsView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Movie list (header is now the first list row so it scrolls with content)
+                // Movie list with pinned title header; progress + filters scroll with content
                 List {
                     if let selectedList = viewModel.selectedList {
-                        VStack(spacing: 16) {
-                            // List title (smaller, less bold, centered, with chevron indicator)
+                        Section {
+                            // Row: progress + filters (scroll away)
+                            let (watched, total) = viewModel.calculateListCompletion(for: selectedList.id)
+                            let progress = viewModel.calculateListProgress(for: selectedList.id)
+                            VStack(spacing: 16) {
+                                VStack(spacing: 8) {
+                                    GeometryReader { geometry in
+                                        ZStack(alignment: .leading) {
+                                            Rectangle()
+                                                .foregroundColor(Color(.systemGray5))
+                                                .frame(width: geometry.size.width, height: 6)
+                                                .cornerRadius(4)
+                                            Rectangle()
+                                                .foregroundColor(Color(.systemGray3))
+                                                .frame(width: geometry.size.width * CGFloat(progress), height: 6)
+                                                .cornerRadius(4)
+                                        }
+                                    }
+                                    .frame(height: 6)
+                                    Text("\(watched) of \(total) watched (\(Int(progress * 100))%)")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(.horizontal)
+
+                                // Sort options with direction toggle
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 8) {
+                                        ForEach(MovieSortOption.allCases, id: \.self) { option in
+                                            Button(action: { viewModel.setSortOption(option) }) {
+                                                HStack(spacing: 4) {
+                                                    Text(option.rawValue)
+                                                        .font(.subheadline)
+                                                        .fontWeight(viewModel.sortOption == option ? .semibold : .regular)
+                                                    if viewModel.sortOption == option {
+                                                        Text(viewModel.isEffectiveAscending(for: option) ? "▲" : "▼")
+                                                            .font(.caption2)
+                                                            .accessibilityHidden(true)
+                                                    }
+                                                }
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 6)
+                                                .background(viewModel.sortOption == option ? Color(.systemGray5) : Color(.systemGray6))
+                                                .foregroundColor(viewModel.sortOption == option ? Color.primary : Color.secondary)
+                                                .cornerRadius(10)
+                                                .contentShape(Rectangle())
+                                            }
+                                            .buttonStyle(.plain)
+                                            .accessibilityLabel("Sort by \(option.rawValue) \(viewModel.isEffectiveAscending(for: option) ? "ascending" : "descending")")
+                                        }
+                                    }
+                                    .padding(.horizontal)
+                                    .padding(.vertical, 8)
+                                }
+                            }
+                            .padding(.top, 6)
+                            .padding(.bottom, 8)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                            .listRowBackground(appBackground)
+                        } header: {
+                            // Pinned header: just the list title button
                             Button(action: { showingListSelector = true }) {
                                 HStack(spacing: 6) {
                                     Spacer(minLength: 0)
@@ -25,7 +84,6 @@ struct MovieListsView: View {
                                         .fontWeight(.semibold)
                                         .foregroundColor(.primary)
                                         .multilineTextAlignment(.center)
-                                        .lineLimit(nil)
                                         .fixedSize(horizontal: false, vertical: true)
                                     Image(systemName: "chevron.down")
                                         .font(.footnote)
@@ -34,68 +92,12 @@ struct MovieListsView: View {
                                 }
                                 .contentShape(Rectangle())
                             }
-                            // Progress indicator
-                            let (watched, total) = viewModel.calculateListCompletion(for: selectedList.id)
-                            let progress = viewModel.calculateListProgress(for: selectedList.id)
-                            VStack(spacing: 8) {
-                                GeometryReader { geometry in
-                                    ZStack(alignment: .leading) {
-                                        Rectangle()
-                                            .foregroundColor(Color(.systemGray5))
-                                            .frame(width: geometry.size.width, height: 6)
-                                            .cornerRadius(4)
-                                        Rectangle()
-                                            .foregroundColor(Color(.systemGray3))
-                                            .frame(width: geometry.size.width * CGFloat(progress), height: 6)
-                                            .cornerRadius(4)
-                                    }
-                                }
-                                .frame(height: 6)
-                                Text("\(watched) of \(total) watched (\(Int(progress * 100))%)")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(.horizontal)
-                            
-                            // Sort options with direction toggle
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 8) {
-                                    ForEach(MovieSortOption.allCases, id: \.self) { option in
-                                        Button(action: { viewModel.setSortOption(option) }) {
-                                            HStack(spacing: 4) {
-                                                Text(option.rawValue)
-                                                    .font(.subheadline)
-                                                    .fontWeight(viewModel.sortOption == option ? .semibold : .regular)
-                                                if viewModel.sortOption == option {
-                                                    Text(viewModel.isEffectiveAscending(for: option) ? "▲" : "▼")
-                                                        .font(.caption2)
-                                                        .accessibilityHidden(true)
-                                                }
-                                            }
-                                            .padding(.horizontal, 10)
-                                            .padding(.vertical, 6)
-                                            .background(viewModel.sortOption == option ? Color(.systemGray5) : Color(.systemGray6))
-                                            .foregroundColor(viewModel.sortOption == option ? Color.primary : Color.secondary)
-                                            .cornerRadius(10)
-                                            .contentShape(Rectangle())
-                                        }
-                                        .buttonStyle(.plain)
-                                        .accessibilityLabel("Sort by \(option.rawValue) \(viewModel.isEffectiveAscending(for: option) ? "ascending" : "descending")")
-                                    }
-                                }
-                                .padding(.horizontal)
-                                .padding(.vertical, 8)
-                            }
+                            .padding(.top, 4)
+                            .padding(.bottom, 6)
+                            .background(appBackground)
                         }
-                        .padding(.top, 6)
-                        .padding(.bottom, 8)
-                        // Make this list row full-bleed and match background so it blends as a header
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(appBackground)
-                        .background(appBackground)
                     }
-                    
+
                     // Movie rows
                     ForEach(viewModel.selectedListMovies) { movie in
                         NavigationLink(destination: MovieDetailView(movie: movie)) {
@@ -138,6 +140,7 @@ struct MovieListsView: View {
                 }
                 .listStyle(PlainListStyle())
                 .listRowSeparator(.hidden)
+                .listSectionSeparator(.hidden)
                 .hideScrollBackground()
                 .background(appBackground)
             }
