@@ -27,6 +27,7 @@ struct WatchlistView: View {
                     }
                 } else {
                     List {
+                        Color.clear.frame(height: 4).listRowBackground(AppColors.background)
                         ForEach(viewModel.watchlist) { movie in
                             NavigationLink(destination: MovieDetailView(movie: movie)) {
                                 MovieRowView(movie: movie)
@@ -57,6 +58,10 @@ struct WatchlistView: View {
             .legacyListBackground(AppColors.background)
             .background(AppColors.background)
             .navBarBackground(AppColors.background)
+            .safeAreaInset(edge: .top) {
+                // Keep consistent top cap color under nav bar
+                Rectangle().fill(AppColors.background).frame(height: 0.5)
+            }
                 }
             }
             .navigationTitle("Watchlist")

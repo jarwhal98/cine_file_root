@@ -104,6 +104,7 @@ struct SearchView: View {
                 } else {
                     // Results list
                     List {
+                        Color.clear.frame(height: 4).listRowBackground(AppColors.background)
                         ForEach(viewModel.searchResults) { movie in
                             NavigationLink(destination: MovieDetailView(movie: movie)) {
                                 MovieRowView(movie: movie)
@@ -127,6 +128,9 @@ struct SearchView: View {
             .legacyListBackground(AppColors.background)
             .background(AppColors.background)
             .navBarBackground(AppColors.background)
+            .safeAreaInset(edge: .top) {
+                Rectangle().fill(AppColors.background).frame(height: 0.5)
+            }
                 }
             }
             .navigationTitle("Search")

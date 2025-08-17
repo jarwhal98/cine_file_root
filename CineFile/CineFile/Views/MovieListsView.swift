@@ -13,8 +13,10 @@ struct MovieListsView: View {
         NavigationView {
             VStack(spacing: 0) {
                 // Movie list with a custom pinned header via safeAreaInset; progress + filters scroll away
-                List {
+        List {
                     if let selectedList = viewModel.selectedList {
+            // Spacer to avoid first row being obscured by pinned safeAreaInset header
+            Color.clear.frame(height: 4).listRowBackground(appBackground)
                         // Row 1: progress + filters (scroll away)
                         let (watched, total) = viewModel.calculateListCompletion(for: selectedList.id)
                         let progress = viewModel.calculateListProgress(for: selectedList.id)
@@ -121,13 +123,6 @@ struct MovieListsView: View {
                 .listRowBackground(appBackground)
                 .legacyListBackground(appBackground)
                 .background(appBackground)
-                .overlay(
-                    // Cover any remaining white from behind the list on new OSes
-                    Rectangle()
-                        .fill(appBackground)
-                        .ignoresSafeArea()
-                        .allowsHitTesting(false)
-                )
                 // Pinned title just under navigation bar
                 .safeAreaInset(edge: .top) {
                     if let selectedList = viewModel.selectedList {
