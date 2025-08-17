@@ -5,18 +5,27 @@ struct SplashView: View {
     @State private var appear = false
     @State private var displayedText: String = ""
     @State private var typeTimer: Timer?
-    private let fullTagline = "Cross off the classics, one reel at a time."
+    private let fullTagline = "Cross off\nthe Classics,\none reel\nat a time."
 
     var body: some View {
         GeometryReader { proxy in
             let w = proxy.size.width
             let h = proxy.size.height
+            let insets = proxy.safeAreaInsets
 
             ZStack {
                 // Background image (add your image as "splash_bg" in Assets)
                 Image("splash_bg")
                     .resizable()
                     .scaledToFill()
+                    .frame(
+                        width: w + insets.leading + insets.trailing,
+                        height: h + insets.top + insets.bottom,
+                        alignment: .center
+                    )
+                    .position(x: w / 2.2, y: h / 1.7807)
+                    .clipped()
+                    .scaleEffect(1.0) // 
                     .ignoresSafeArea()
 
                 // Soft overhead light cone from the top center to mimic the lamp
@@ -50,17 +59,26 @@ struct SplashView: View {
                 .zIndex(2)
 
                 // Centered tagline with SF Pro (non-serif), in requested color #AC9E79
-                let taglineFont = Font.system(size: 20, weight: .medium, design: .default)
+        let taglineFont = Font.system(size: 24, weight: .semibold, design: .monospaced)
                 let taglineColor = Color(red: 172/255, green: 158/255, blue: 121/255)
-                Text(displayedText)
+        Text(displayedText)
                     .font(taglineFont)
                     .foregroundColor(taglineColor)
                     .multilineTextAlignment(.center)
-                    .kerning(0.3)
-                    .shadow(color: Color.black.opacity(0.85), radius: 12, x: 0, y: 10)
-                    .shadow(color: Color.black.opacity(0.15), radius: 2, x: 0, y: 1)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .opacity(0.18)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color.white.opacity(0.14), lineWidth: 0.5)
+                            )
+                .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
+                    )
                     .frame(width: min(w * 0.82, 520))
-                    .position(x: w / 2, y: h / 2)
+                    .position(x: w / 2, y: h * 0.56)
                     .zIndex(3)
             }
             .contentShape(Rectangle())
@@ -90,7 +108,7 @@ struct SplashView: View {
                         typeTimer = nil
                     }
                 }
-                if let typeTimer { RunLoop.main.add(typeTimer, forMode: .common) }
+                if let timer = typeTimer { RunLoop.main.add(timer, forMode: .common) }
             }
             .onDisappear {
                 typeTimer?.invalidate()
