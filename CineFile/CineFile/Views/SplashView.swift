@@ -25,25 +25,22 @@ struct SplashView: View {
             )
             .ignoresSafeArea()
 
-            // Title matching app style (serif, semibold), scaled up for splash
+            // Title using same font family as inline nav title (system San Francisco), placed slightly higher
             Text("CineFile")
-                .font(.system(size: 44, weight: .semibold, design: .serif))
+                .font(.system(size: 44, weight: .semibold, design: .default))
                 .foregroundColor(.white)
                 .shadow(color: Color.black.opacity(0.55), radius: 12, x: 0, y: 6)
                 .scaleEffect(appear ? 1.0 : 0.96)
                 .opacity(appear ? 1.0 : 0.0)
+                .offset(y: -80)
                 .animation(.spring(response: 0.6, dampingFraction: 0.85), value: appear)
                 .accessibilityAddTraits(.isHeader)
         }
-        .onAppear {
-            appear = true
-            // Hold for a moment, then finish with a smooth fade
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-                withAnimation(.easeOut(duration: 0.35)) {
-                    onFinished()
-                }
-            }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            withAnimation(.easeOut(duration: 0.35)) { onFinished() }
         }
+        .onAppear { appear = true }
     }
 }
 
