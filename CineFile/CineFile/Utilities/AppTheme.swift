@@ -5,16 +5,15 @@ import UIKit
 
 // Centralized colors and lightweight UI helpers used across views
 enum AppColors {
-    // Solarized Base2: #EEE8D5
-    static let background = Color(red: 238/255, green: 232/255, blue: 213/255)
-    // If we want cards to match the background exactly per latest direction
-    static let card = background
+    // New theme: backgrounds #F5F5F5, cards #EFEFEF
+    static let background = Color(red: 245/255, green: 245/255, blue: 245/255) // #F5F5F5
+    static let card = Color(red: 239/255, green: 239/255, blue: 239/255) // #EFEFEF
 }
 
 enum AppTheme {
     static func applyAppearance() {
         #if os(iOS)
-        let bg = UIColor(red: 238/255, green: 232/255, blue: 213/255, alpha: 1)
+    let bg = UIColor(red: 245/255, green: 245/255, blue: 245/255, alpha: 1) // #F5F5F5
         if #available(iOS 15.0, *) {
             let navAppearance = UINavigationBarAppearance()
             navAppearance.configureWithOpaqueBackground()

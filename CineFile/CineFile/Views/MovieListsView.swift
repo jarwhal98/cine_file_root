@@ -148,7 +148,7 @@ struct MovieListsView: View {
                             .contentShape(Rectangle())
                         }
             .padding(.vertical, 2)
-            .background(appBackground.opacity(0.8))
+                        .background(appBackground.opacity(0.8))
                         .overlay(
                             Rectangle()
                 .fill(Color.black.opacity(0.06))
