@@ -142,7 +142,6 @@ struct MovieListsView: View {
                 .listRowSeparator(.hidden)
                 .listSectionSeparator(.hidden)
                 .hideScrollBackground()
-                .stickySectionHeaders()
                 .listRowBackground(appBackground)
                 .legacyListBackground(appBackground)
                 .background(appBackground)
