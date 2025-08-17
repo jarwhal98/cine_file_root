@@ -36,26 +36,7 @@ struct SettingsView: View {
                 
                 // API section removed: key is configured in Info.plist
 
-                Section(header: Text("Import Lists")) {
-                    if viewModel.isImporting {
-                        VStack(alignment: .leading) {
-                            ProgressView(value: viewModel.importProgress)
-                            Text("Importing... \(Int(viewModel.importProgress * 100))%")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        Button("Cancel Import") {
-                            viewModel.cancelImport()
-                        }
-                    } else {
-                        Button("Import NYTimes 100 (21st Century)") {
-                            viewModel.importNYT21FromCSV()
-                        }
-                        Button("Import AFI 100 (2007)") {
-                            viewModel.importAFIFromCSV()
-                        }
-                    }
-                }
+                // Manual import removed (startup preload + Manage Lists handles additions)
                 
                 Section(header: Text("About")) {
                     HStack {

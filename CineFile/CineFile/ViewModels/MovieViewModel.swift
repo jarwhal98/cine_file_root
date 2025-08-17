@@ -49,7 +49,7 @@ class MovieViewModel: ObservableObject {
         self.updateSelectedListMovies()
     }
 
-    private struct PreloadList: Decodable { let id: String; let name: String; let description: String; let source: String; let year: Int; let type: String; let resource: String }
+    private struct PreloadList: Decodable { let id: String; let name: String; let description: String; let source: String; let year: Int; let type: String; let resource: String; let preload: Bool? }
     private struct PreloadConfig: Decodable { let lists: [PreloadList] }
     struct PreloadListUI: Identifiable { let id: String; let name: String; let description: String; let source: String; let year: Int }
     // Import row with optional director (for better disambiguation)
@@ -84,11 +84,12 @@ class MovieViewModel: ObservableObject {
                 let initialMovieCount = self.movies.count
                 let data = try Data(contentsOf: url)
                 let cfg = try JSONDecoder().decode(PreloadConfig.self, from: data)
-                self.movieLists = cfg.lists.map { MovieList(id: $0.id, name: $0.name, description: $0.description, source: $0.source, year: $0.year, movieIDs: []) }
+                let initialItems = cfg.lists.filter { $0.preload != false }
+                self.movieLists = initialItems.map { MovieList(id: $0.id, name: $0.name, description: $0.description, source: $0.source, year: $0.year, movieIDs: []) }
 
                 // Determine overall total for a smoother progress ramp
                 var totalRows = 0
-                for item in cfg.lists {
+                for item in initialItems {
                     switch item.type {
                     case "csv-nyt21": totalRows += (try? CSVImporter.loadNYT21(fileName: item.resource).count) ?? 0
                     case "csv-afi": totalRows += (try? CSVImporter.loadAFI(fileName: item.resource).count) ?? 0
@@ -98,7 +99,7 @@ class MovieViewModel: ObservableObject {
                 }
                 var processedRows = 0
 
-                for (idx, item) in cfg.lists.enumerated() {
+                for (idx, item) in initialItems.enumerated() {
                     if importCancelled { break }
                     self.preloadStatus = "Importing \(item.name)…"
                     let rows: [ImportRow]

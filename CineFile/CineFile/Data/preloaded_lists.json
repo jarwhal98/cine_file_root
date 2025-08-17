@@ -7,7 +7,8 @@
       "source": "The New York Times",
       "year": 2025,
       "type": "csv-nyt21",
-      "resource": "nyt_best_movies_21st_century"
+  "resource": "nyt_best_movies_21st_century",
+  "preload": true
     },
     {
       "id": "tspdt-top-100",
@@ -16,7 +17,8 @@
       "source": "TSPDT",
       "year": 2024,
       "type": "csv-tspdt",
-      "resource": "TSPDT100"
+  "resource": "TSPDT100",
+  "preload": false
     },
     {
       "id": "tspdt-100-acclaim-21st",
@@ -25,7 +27,8 @@
       "source": "TSPDT",
       "year": 2024,
       "type": "csv-tspdt",
-      "resource": "TSPDTAcclaim21st"
+  "resource": "TSPDTAcclaim21st",
+  "preload": true
   },
   {
       "id": "afi-100-2007",
@@ -34,7 +37,18 @@
       "source": "AFI",
       "year": 2007,
       "type": "csv-afi",
-      "resource": "afi_top_100_2007"
+      "resource": "afi_top_100_2007",
+      "preload": true
+    },
+    {
+      "id": "variety-best-horror-100",
+      "name": "Variety: 100 Best Horror Movies",
+      "description": "Variety’s 100 Best Horror Movies (format like TSPDT).",
+      "source": "Variety",
+      "year": 2024,
+      "type": "csv-tspdt",
+      "resource": "variety_best_horror_like_TSPDT100",
+      "preload": true
     }
   ]
 }
