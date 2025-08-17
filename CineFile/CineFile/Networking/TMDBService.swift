@@ -33,12 +33,11 @@ final class TMDBService {
     private let imageBaseURL = URL(string: "https://image.tmdb.org/t/p/w500")!
 
     private var apiKey: String? {
-        // Prefer Info.plist key, fallback to UserDefaults for local testing via Settings screen
+        // Read from Info.plist only
         if let k = Bundle.main.infoDictionary?["TMDB_API_KEY"] as? String, !k.isEmpty, k != "YOUR_TMDB_API_KEY" {
             return k
         }
-        let ud = UserDefaults.standard.string(forKey: "tmdbApiKey")
-        return (ud?.isEmpty == false) ? ud : nil
+        return nil
     }
 
     private func makeRequest(path: String, queryItems: [URLQueryItem]) throws -> URLRequest {

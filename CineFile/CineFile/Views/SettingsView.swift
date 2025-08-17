@@ -7,7 +7,7 @@ struct SettingsView: View {
     @AppStorage("showAdultContent") private var showAdultContent = false
     @AppStorage("defaultTab") private var defaultTab = 0
     
-    @State private var apiKey = UserDefaults.standard.string(forKey: "tmdbApiKey") ?? ""
+    // Removed API key entry; TMDB key is read from Info.plist
     
     var body: some View {
         NavigationView {
@@ -34,19 +34,7 @@ struct SettingsView: View {
                     }
                 }
                 
-                Section(header: Text("API")) {
-                    TextField("TMDB API Key", text: $apiKey)
-                        .autocapitalization(.none)
-                        .disableAutocorrection(true)
-                        .onChange(of: apiKey) { newValue in
-                            UserDefaults.standard.set(newValue, forKey: "tmdbApiKey")
-                        }
-                    
-                    Button("Save API Key") {
-                        UserDefaults.standard.set(apiKey, forKey: "tmdbApiKey")
-                    }
-                    .disabled(apiKey.isEmpty)
-                }
+                // API section removed: key is configured in Info.plist
 
                 Section(header: Text("Import Lists")) {
                     if viewModel.isImporting {
@@ -94,8 +82,6 @@ struct SettingsView: View {
                         useDarkMode = false
                         showAdultContent = false
                         defaultTab = 0
-                        apiKey = ""
-                        UserDefaults.standard.set("", forKey: "tmdbApiKey")
                     }
                     .foregroundColor(.red)
                 }

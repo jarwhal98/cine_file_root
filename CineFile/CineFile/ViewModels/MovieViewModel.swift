@@ -440,18 +440,28 @@ class MovieViewModel: ObservableObject {
             if importCancelled { break }
         }
 
-        // Merge into existing movies: prefer highest data richness by ID
+        // Merge into existing movies: prefer ID match, fallback to title+year to avoid duplicates
         for m in imported {
             if let idx = movies.firstIndex(where: { $0.id == m.id }) {
                 let existing = movies[idx]
                 var merged = m
-                // Preserve local toggles
                 merged.watched = existing.watched
                 merged.inWatchlist = existing.inWatchlist
                 merged.userRating = existing.userRating
-                // Merge rankings
                 merged.listRankings.merge(existing.listRankings) { new, old in new }
                 movies[idx] = merged
+            } else if let idx2 = movies.firstIndex(where: { $0.title.caseInsensitiveCompare(m.title) == .orderedSame && $0.year == m.year }) {
+                var existing = movies[idx2]
+                // Merge rankings into existing record and preserve its ID
+                existing.listRankings.merge(m.listRankings) { new, old in new }
+                // Optionally fill missing metadata from m if existing lacks it
+                if existing.director.isEmpty { existing.director = m.director }
+                if existing.posterURL.isEmpty { existing.posterURL = m.posterURL }
+                if existing.overview.isEmpty { existing.overview = m.overview }
+                if existing.runtime == 0 { existing.runtime = m.runtime }
+                if existing.genres.isEmpty { existing.genres = m.genres }
+                if existing.cast.isEmpty { existing.cast = m.cast }
+                movies[idx2] = existing
             } else {
                 movies.append(m)
             }
