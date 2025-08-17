@@ -20,8 +20,8 @@ struct MovieListsView: View {
                         // Row 1: progress + filters (scroll away)
                         let (watched, total) = viewModel.calculateListCompletion(for: selectedList.id)
                         let progress = viewModel.calculateListProgress(for: selectedList.id)
-            VStack(spacing: 10) {
-                VStack(spacing: 6) {
+            VStack(spacing: 8) {
+                VStack(spacing: 4) {
                                     GeometryReader { geometry in
                                         ZStack(alignment: .leading) {
                                             Rectangle()
@@ -71,7 +71,7 @@ struct MovieListsView: View {
                                     .padding(.vertical, 8)
                                 }
                             }
-                            .padding(.top, 2)
+                            .padding(.top, 0)
                             .padding(.bottom, 2)
                             .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                             .listRowBackground(appBackground)
@@ -88,6 +88,9 @@ struct MovieListsView: View {
                                 ratingSheetMovie = movie
                             })
                         }
+                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        .listRowBackground(appBackground)
+                        .overlay(Rectangle().fill(appBackground).frame(height: 0.001), alignment: .bottom)
                         .swipeActions(edge: .trailing) {
                             Button {
                                 viewModel.toggleWatchlist(for: movie)
@@ -119,8 +122,9 @@ struct MovieListsView: View {
                 }
                 .listStyle(PlainListStyle())
                 .listRowSeparator(.hidden)
+                .listSectionSeparator(.hidden)
                 .hideScrollBackground()
-                .adaptiveListRowSpacing(4)
+                .adaptiveListRowSpacing(0)
                 .listRowBackground(appBackground)
                 .legacyListBackground(appBackground)
                 .background(appBackground)
@@ -143,11 +147,11 @@ struct MovieListsView: View {
                             }
                             .contentShape(Rectangle())
                         }
-                        .padding(.vertical, 2)
-                        .background(appBackground.opacity(0.9))
+            .padding(.vertical, 2)
+            .background(appBackground.opacity(0.8))
                         .overlay(
                             Rectangle()
-                                .fill(Color.black.opacity(0.08))
+                .fill(Color.black.opacity(0.06))
                                 .frame(height: 0.5)
                                 .frame(maxHeight: .infinity, alignment: .bottom)
                                 .ignoresSafeArea(edges: .horizontal)
@@ -310,10 +314,11 @@ struct MovieListRowView: View {
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(AppColors.card)
-                .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 3)
+                .shadow(color: Color.black.opacity(0.10), radius: 12, x: 0, y: 6)
+                .shadow(color: Color.black.opacity(0.04), radius: 3, x: 0, y: 1)
         )
-        .padding(.vertical, 6)
-    .padding(.bottom, 2)
+        .compositingGroup()
+        .padding(.vertical, 8)
     .listRowBackground(AppColors.background)
         .listRowSeparator(.hidden)
     }
