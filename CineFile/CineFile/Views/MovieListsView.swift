@@ -132,8 +132,8 @@ struct MovieListsView: View {
                                 }
                                 .contentShape(Rectangle())
                             }
-                            .padding(.top, 0)
-                            .padding(.bottom, 4)
+                            .padding(.top, -8)
+                            .padding(.bottom, 2)
                             .background(appBackground.opacity(0.98))
                             .overlay(
                                 Rectangle()
@@ -152,6 +152,7 @@ struct MovieListsView: View {
                 .listRowBackground(appBackground)
                 .legacyListBackground(appBackground)
                 .background(appBackground)
+                .navBarBackground(appBackground)
             }
             .navigationTitle("CineFile")
             .navigationBarTitleDisplayMode(.inline)

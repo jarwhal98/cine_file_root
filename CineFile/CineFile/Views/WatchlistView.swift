@@ -56,6 +56,7 @@ struct WatchlistView: View {
             .listRowBackground(AppColors.background)
             .legacyListBackground(AppColors.background)
             .background(AppColors.background)
+            .navBarBackground(AppColors.background)
                 }
             }
             .navigationTitle("Watchlist")

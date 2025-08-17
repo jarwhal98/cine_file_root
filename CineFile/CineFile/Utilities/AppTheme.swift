@@ -50,3 +50,22 @@ struct LegacyListBackground: ViewModifier {
 extension View {
     func legacyListBackground(_ color: Color) -> some View { self.modifier(LegacyListBackground(color: color)) }
 }
+
+// Set a solid navigation bar background color (iOS 16+) to match the app theme
+struct NavBarBackground: ViewModifier {
+    let color: Color
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 16.0, *) {
+            content
+                .toolbarBackground(color, for: .navigationBar)
+                .toolbarBackground(.visible, for: .navigationBar)
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    func navBarBackground(_ color: Color) -> some View { self.modifier(NavBarBackground(color: color)) }
+}
