@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SplashView: View {
+    @EnvironmentObject var viewModel: MovieViewModel
     var onFinished: () -> Void
     @State private var appear = false
     @State private var displayedText: String = ""
@@ -61,7 +62,8 @@ struct SplashView: View {
                 // Centered tagline with SF Pro (non-serif), in requested color #AC9E79
         let taglineFont = Font.system(size: 24, weight: .semibold, design: .monospaced)
                 let taglineColor = Color(red: 172/255, green: 158/255, blue: 121/255)
-        Text(displayedText)
+        VStack(spacing: 14) {
+            Text(displayedText)
                     .font(taglineFont)
                     .foregroundColor(taglineColor)
                     .multilineTextAlignment(.center)
@@ -78,21 +80,50 @@ struct SplashView: View {
                 .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
                     )
                     .frame(width: min(w * 0.82, 520))
-                    .position(x: w / 2, y: h * 0.56)
-                    .zIndex(3)
+
+            // Progress bar while preloading
+            if !viewModel.preloadCompleted {
+                VStack(spacing: 8) {
+                    ProgressView(value: viewModel.importProgress)
+                        .progressViewStyle(LinearProgressViewStyle(tint: taglineColor))
+                        .frame(width: min(w * 0.72, 420))
+                    Text(viewModel.preloadStatus.isEmpty ? "Preparing…" : viewModel.preloadStatus)
+                        .font(.footnote)
+                        .foregroundColor(.white.opacity(0.85))
+                }
+                .padding(.top, 6)
+            } else {
+                // Begin button after preload completes
+                Button(action: { withAnimation(.easeOut(duration: 0.35)) { onFinished() } }) {
+                    Text("Click to begin")
+                        .font(.headline)
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 10)
+                        .background(
+                            Capsule(style: .circular)
+                                .fill(taglineColor)
+                                .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 4)
+                        )
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 10)
+            }
+        }
+        .position(x: w / 2, y: h * 0.56)
+        .zIndex(3)
             }
             .contentShape(Rectangle())
+            // Disable gestures until preload completes
             .gesture(
                 DragGesture(minimumDistance: 20)
                     .onEnded { value in
+                        guard viewModel.preloadCompleted else { return }
                         if value.translation.height < -40 { // swipe up
                             withAnimation(.easeOut(duration: 0.3)) { onFinished() }
                         }
                     }
             )
-            .onTapGesture {
-                withAnimation(.easeOut(duration: 0.35)) { onFinished() }
-            }
             .onAppear {
                 appear = true
                 displayedText = ""

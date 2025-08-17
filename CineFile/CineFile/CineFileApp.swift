@@ -22,7 +22,11 @@ struct CineFileApp: App {
             .animation(.easeOut(duration: 0.35), value: showSplash)
             .accentColor(.red)
             .environmentObject(viewModel)
-            .onAppear { AppTheme.applyAppearance() }
+            .onAppear {
+                AppTheme.applyAppearance()
+                // Kick off first-launch preload; Splash will show progress
+                viewModel.startInitialPreloadIfNeeded()
+            }
         }
     }
 }

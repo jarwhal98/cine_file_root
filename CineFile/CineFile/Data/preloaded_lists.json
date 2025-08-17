@@ -1,0 +1,22 @@
+{
+  "lists": [
+    {
+      "id": "nytimes-100-21st-century",
+      "name": "NYTimes 100 Best Movies of the 21st Century",
+      "description": "The New York Times' critics rank the 100 greatest movies of the 21st century.",
+      "source": "The New York Times",
+      "year": 2025,
+      "type": "csv-nyt21",
+      "resource": "nyt_best_movies_21st_century"
+    },
+    {
+      "id": "afi-100-2007",
+      "name": "AFI 100 Greatest Films (2007)",
+      "description": "American Film Institute's 100 greatest American films (2007 update).",
+      "source": "AFI",
+      "year": 2007,
+      "type": "csv-afi",
+      "resource": "afi_top_100_2007"
+    }
+  ]
+}
