@@ -10,6 +10,24 @@
       "resource": "nyt_best_movies_21st_century"
     },
     {
+      "id": "tspdt-top-100",
+      "name": "TSPDT Top 100",
+      "description": "They Shoot Pictures, Don’t They? Top 100 Greatest Films",
+      "source": "TSPDT",
+      "year": 2024,
+      "type": "csv-tspdt",
+      "resource": "TSPDT100"
+    },
+    {
+      "id": "tspdt-100-acclaim-21st",
+      "name": "TSPDT 100 Most Acclaimed of the 21st Century",
+      "description": "They Shoot Pictures, Don’t They? 100 Most Acclaimed Films of the 21st Century",
+      "source": "TSPDT",
+      "year": 2024,
+      "type": "csv-tspdt",
+      "resource": "TSPDTAcclaim21st"
+  },
+  {
       "id": "afi-100-2007",
       "name": "AFI 100 Greatest Films (2007)",
       "description": "American Film Institute's 100 greatest American films (2007 update).",

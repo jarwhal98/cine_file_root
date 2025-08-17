@@ -60,16 +60,20 @@ class MovieViewModel: ObservableObject {
         preloadStatus = "Preparing…"
 
         Task { @MainActor in
+            var succeeded = false
             defer {
                 self.isImporting = false
-                self.preloadCompleted = true
+                self.preloadCompleted = succeeded
                 self.updateSelectedListMovies()
             }
-            guard let url = Bundle.main.url(forResource: "preloaded_lists", withExtension: "json", subdirectory: "Data") else {
-                self.logger.error("Missing preloaded_lists.json")
+            // Config is bundled at root; no subdirectory in app bundle
+            guard let url = Bundle.main.url(forResource: "preloaded_lists", withExtension: "json") else {
+                self.logger.error("Missing preloaded_lists.json in bundle root")
+                self.preloadStatus = "Failed to find preloaded lists"
                 return
             }
             do {
+                let initialMovieCount = self.movies.count
                 let data = try Data(contentsOf: url)
                 let cfg = try JSONDecoder().decode(PreloadConfig.self, from: data)
                 self.movieLists = cfg.lists.map { MovieList(id: $0.id, name: $0.name, description: $0.description, source: $0.source, year: $0.year, movieIDs: []) }
@@ -80,6 +84,7 @@ class MovieViewModel: ObservableObject {
                     switch item.type {
                     case "csv-nyt21": totalRows += (try? CSVImporter.loadNYT21(fileName: item.resource).count) ?? 0
                     case "csv-afi": totalRows += (try? CSVImporter.loadAFI(fileName: item.resource).count) ?? 0
+                    case "csv-tspdt": totalRows += (try? CSVImporter.loadTSPDT(fileName: item.resource).count) ?? 0
                     default: break
                     }
                 }
@@ -94,6 +99,8 @@ class MovieViewModel: ObservableObject {
                         rows = (try CSVImporter.loadNYT21(fileName: item.resource)).map { ($0.rank, $0.title, $0.year) }
                     case "csv-afi":
                         rows = (try CSVImporter.loadAFI(fileName: item.resource)).map { ($0.rank, $0.title, $0.year) }
+                    case "csv-tspdt":
+                        rows = (try CSVImporter.loadTSPDT(fileName: item.resource)).map { ($0.rank, $0.title, $0.year) }
                     default:
                         rows = []
                     }
@@ -109,7 +116,14 @@ class MovieViewModel: ObservableObject {
                     // Select first list after it’s ready
                     if idx == 0 { self.selectList(item.id) }
                 }
-                self.preloadStatus = "Ready"
+                let importedCount = self.movies.count - initialMovieCount
+                if importedCount > 0 {
+                    self.preloadStatus = "Ready"
+                    succeeded = true
+                } else {
+                    self.preloadStatus = "No titles imported"
+                    succeeded = false
+                }
             } catch {
                 self.logger.error("Preload failed: \(error.localizedDescription)")
                 self.preloadStatus = "Failed: \(error.localizedDescription)"

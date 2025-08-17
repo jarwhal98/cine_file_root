@@ -12,6 +12,14 @@ struct CSVRowAFI: Decodable {
     let year: Int
 }
 
+struct CSVRowTSPDT: Decodable {
+    let rank: Int
+    let title: String
+    let director: String
+    let year: Int
+    let minutes: Int
+}
+
 enum CSVImporterError: Error { case fileNotFound, invalidData }
 
 enum CSVImporter {
@@ -27,6 +35,13 @@ enum CSVImporter {
         let data = try Data(contentsOf: url)
         guard let string = String(data: data, encoding: .utf8) else { throw CSVImporterError.invalidData }
         return parseRowsAFI(csv: string)
+    }
+
+    static func loadTSPDT(fileName: String, in bundle: Bundle = .main) throws -> [CSVRowTSPDT] {
+        guard let url = bundle.url(forResource: fileName, withExtension: "csv") else { throw CSVImporterError.fileNotFound }
+        let data = try Data(contentsOf: url)
+        guard let string = String(data: data, encoding: .utf8) else { throw CSVImporterError.invalidData }
+        return parseRowsTSPDT(csv: string)
     }
 
     private static func parseRowsNYT(csv: String) -> [CSVRowNYT] {
@@ -51,6 +66,24 @@ enum CSVImporter {
             let fields = splitCSV(line: String(line))
             guard fields.count >= 4, let rank = Int(fields[1]), let year = Int(fields[3]) else { continue }
             rows.append(CSVRowAFI(rank: rank, title: fields[2], year: year))
+        }
+        return rows
+    }
+
+    private static func parseRowsTSPDT(csv: String) -> [CSVRowTSPDT] {
+        var rows: [CSVRowTSPDT] = []
+        let lines = csv.split(whereSeparator: { $0.isNewline })
+        guard !lines.isEmpty else { return [] }
+        for (idx, line) in lines.enumerated() {
+            if idx == 0 { continue } // header: Pos,2024,Title,Director,Year,Country,Mins
+            let fields = splitCSV(line: String(line))
+            // Ensure we have enough columns
+            guard fields.count >= 7 else { continue }
+            guard let rank = Int(fields[0]), let year = Int(fields[4]) else { continue }
+            let title = fields[2]
+            let director = fields[3]
+            let minutes = Int(fields[6]) ?? 0
+            rows.append(CSVRowTSPDT(rank: rank, title: title, director: director, year: year, minutes: minutes))
         }
         return rows
     }
