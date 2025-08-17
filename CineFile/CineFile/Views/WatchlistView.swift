@@ -48,11 +48,15 @@ struct WatchlistView: View {
                                 .tint(.green)
                             }
                         }
-                    }
-                    .listStyle(PlainListStyle())
+            }
+            .listStyle(PlainListStyle())
+            .listRowSeparator(.hidden)
+            .hideScrollBackground()
+            .background(AppColors.background)
                 }
             }
             .navigationTitle("Watchlist")
+        .background(AppColors.background.ignoresSafeArea())
         }
     }
 }

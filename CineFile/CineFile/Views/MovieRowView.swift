@@ -4,7 +4,7 @@ struct MovieRowView: View {
     let movie: Movie
     
     var body: some View {
-        HStack(spacing: 15) {
+    HStack(spacing: 15) {
             // Movie poster
             AsyncImage(url: URL(string: movie.posterURL)) { phase in
                 switch phase {
@@ -88,6 +88,12 @@ struct MovieRowView: View {
             
             Spacer()
         }
-        .padding(.vertical, 8)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(AppColors.card)
+                .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 3)
+        )
+        .padding(.vertical, 6)
     }
 }

@@ -3,6 +3,8 @@ import SwiftUI
 struct MovieListView: View {
     @EnvironmentObject var viewModel: MovieViewModel
     @State private var selectedFilter = "All"
+    @State private var ratingSheetMovie: Movie? = nil
+    @State private var ratingSheetUserRating: Double = 0
     
     let filterOptions = ["All", "Watched", "Unwatched"]
     
@@ -51,7 +53,13 @@ struct MovieListView: View {
                             .tint(.blue)
                             
                             Button {
-                                viewModel.toggleWatched(for: movie)
+                                if movie.watched {
+                                    viewModel.toggleWatched(for: movie)
+                                } else {
+                                    viewModel.toggleWatched(for: movie)
+                                    ratingSheetUserRating = movie.userRating ?? 0
+                                    ratingSheetMovie = movie
+                                }
                             } label: {
                                 Label(movie.watched ? "Unwatched" : "Watched", 
                                       systemImage: movie.watched ? "eye.slash" : "eye")
@@ -71,6 +79,15 @@ struct MovieListView: View {
                         Image(systemName: "plus")
                     }
                 }
+            }
+            // Rating sheet for seen action
+            .sheet(item: $ratingSheetMovie) { movie in
+                let isPresentedBinding = Binding<Bool>(
+                    get: { ratingSheetMovie != nil },
+                    set: { newVal in if newVal == false { ratingSheetMovie = nil } }
+                )
+                MovieRatingView(movie: movie, userRating: $ratingSheetUserRating, isPresented: isPresentedBinding)
+                    .environmentObject(viewModel)
             }
         }
     }

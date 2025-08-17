@@ -44,6 +44,7 @@ struct SearchView: View {
                         }
                 }
                 .padding(.top, 10)
+                .padding(.horizontal, 8)
                 
                 // Error message (e.g., missing API key)
                 if let error = viewModel.errorMessage, !error.isEmpty {
@@ -117,11 +118,15 @@ struct SearchView: View {
                                 .tint(.blue)
                             }
                         }
-                    }
-                    .listStyle(PlainListStyle())
+            }
+            .listStyle(PlainListStyle())
+            .listRowSeparator(.hidden)
+            .hideScrollBackground()
+            .background(AppColors.background)
                 }
             }
             .navigationTitle("Search")
+        .background(AppColors.background.ignoresSafeArea())
         }
     }
 }

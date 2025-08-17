@@ -15,7 +15,7 @@ struct MovieDetailView: View {
     }
     
     var body: some View {
-        ScrollView {
+    ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 // Header with poster and basic info
                 ZStack(alignment: .bottom) {
@@ -313,7 +313,8 @@ struct MovieDetailView: View {
                 .padding(.top)
             }
         }
-        .edgesIgnoringSafeArea(.top)
+    .edgesIgnoringSafeArea(.top)
+    .background(AppColors.background)
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarItems(trailing:
             Button {
@@ -327,6 +328,7 @@ struct MovieDetailView: View {
         )
         .sheet(isPresented: $isShowingRatingSheet) {
             MovieRatingView(movie: updatedMovie, userRating: $userRating, isPresented: $isShowingRatingSheet)
+                .background(AppColors.background)
         }
     }
 }
@@ -420,7 +422,8 @@ struct MovieRatingView: View {
                     isPresented = false
                 }
             )
-        }
+    }
+    .background(AppColors.background)
     }
 }
 

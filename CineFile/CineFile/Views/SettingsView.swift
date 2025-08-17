@@ -100,6 +100,8 @@ struct SettingsView: View {
                     .foregroundColor(.red)
                 }
             }
+            .hideScrollBackground()
+            .background(AppColors.background)
             .navigationTitle("Settings")
         }
     }
@@ -142,6 +144,7 @@ struct AboutView: View {
             .padding()
         }
         .navigationTitle("About")
+    .background(AppColors.background)
     }
 }
 
