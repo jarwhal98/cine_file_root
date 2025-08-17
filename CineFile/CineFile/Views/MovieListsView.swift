@@ -15,13 +15,13 @@ struct MovieListsView: View {
                 // Movie list with a custom pinned header via safeAreaInset; progress + filters scroll away
         List {
                     if let selectedList = viewModel.selectedList {
-            // Spacer to avoid first row being obscured by pinned safeAreaInset header
-            Color.clear.frame(height: 4).listRowBackground(appBackground)
+            // Minimal spacer to avoid overlap with pinned header
+            Color.clear.frame(height: 2).listRowBackground(appBackground)
                         // Row 1: progress + filters (scroll away)
                         let (watched, total) = viewModel.calculateListCompletion(for: selectedList.id)
                         let progress = viewModel.calculateListProgress(for: selectedList.id)
-                        VStack(spacing: 16) {
-                                VStack(spacing: 8) {
+            VStack(spacing: 10) {
+                VStack(spacing: 6) {
                                     GeometryReader { geometry in
                                         ZStack(alignment: .leading) {
                                             Rectangle()
@@ -71,8 +71,8 @@ struct MovieListsView: View {
                                     .padding(.vertical, 8)
                                 }
                             }
-                            .padding(.top, 6)
-                            .padding(.bottom, 4)
+                            .padding(.top, 2)
+                            .padding(.bottom, 2)
                             .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                             .listRowBackground(appBackground)
 
@@ -120,6 +120,7 @@ struct MovieListsView: View {
                 .listStyle(PlainListStyle())
                 .listRowSeparator(.hidden)
                 .hideScrollBackground()
+                .adaptiveListRowSpacing(4)
                 .listRowBackground(appBackground)
                 .legacyListBackground(appBackground)
                 .background(appBackground)
@@ -142,8 +143,8 @@ struct MovieListsView: View {
                             }
                             .contentShape(Rectangle())
                         }
-                        .padding(.vertical, 4)
-                        .background(appBackground.opacity(0.98))
+                        .padding(.vertical, 2)
+                        .background(appBackground.opacity(0.9))
                         .overlay(
                             Rectangle()
                                 .fill(Color.black.opacity(0.08))
@@ -312,6 +313,7 @@ struct MovieListRowView: View {
                 .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 3)
         )
         .padding(.vertical, 6)
+    .padding(.bottom, 2)
     .listRowBackground(AppColors.background)
         .listRowSeparator(.hidden)
     }

@@ -38,8 +38,32 @@ enum AppTheme {
             UITabBar.appearance().barTintColor = bg
             UITabBar.appearance().backgroundColor = bg
         }
+
+        // Ensure SwiftUI List (UITableView) matches theme and has no separators
+        UITableView.appearance().backgroundColor = bg
+        UITableView.appearance().separatorStyle = .none
+        UITableView.appearance().separatorColor = bg
+        UITableViewCell.appearance().backgroundColor = .clear
+        UITableViewHeaderFooterView.appearance().tintColor = bg
         #endif
     }
+}
+
+// iOS 16+: Control spacing between List rows. No-op on earlier versions.
+struct AdaptiveListRowSpacing: ViewModifier {
+    let spacing: CGFloat
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 16.0, *) {
+            content.listRowSpacing(spacing)
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    func adaptiveListRowSpacing(_ spacing: CGFloat) -> some View { self.modifier(AdaptiveListRowSpacing(spacing: spacing)) }
 }
 
 // Hide the default scrollable background (List/Form/ScrollView) on iOS 16+
