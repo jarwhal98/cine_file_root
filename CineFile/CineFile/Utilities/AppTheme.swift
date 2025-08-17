@@ -35,8 +35,12 @@ struct LegacyListBackground: ViewModifier {
                 } else {
                     #if os(iOS)
                     let uiColor = UIColor(color)
-                    UITableView.appearance().backgroundColor = uiColor
-                    UITableViewCell.appearance().backgroundColor = .clear
+                    DispatchQueue.main.async {
+                        UITableView.appearance().backgroundColor = uiColor
+                        UITableView.appearance().separatorColor = uiColor
+                        UITableViewCell.appearance().backgroundColor = .clear
+                        UITableViewHeaderFooterView.appearance().tintColor = uiColor
+                    }
                     #endif
                 }
             }

@@ -132,9 +132,16 @@ struct MovieListsView: View {
                                 }
                                 .contentShape(Rectangle())
                             }
-                            .padding(.top, 4)
-                            .padding(.bottom, 6)
-                            .background(appBackground)
+                            .padding(.top, 0)
+                            .padding(.bottom, 4)
+                            .background(appBackground.opacity(0.98))
+                            .overlay(
+                                Rectangle()
+                                    .fill(Color.black.opacity(0.08))
+                                    .frame(height: 0.5)
+                                    .frame(maxHeight: .infinity, alignment: .bottom)
+                                    .ignoresSafeArea(edges: .horizontal)
+                            )
                         }
                     }
                 }
@@ -303,7 +310,7 @@ struct MovieListRowView: View {
                 .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 3)
         )
         .padding(.vertical, 6)
-        .listRowBackground(Color.clear)
+    .listRowBackground(AppColors.background)
         .listRowSeparator(.hidden)
     }
 }
