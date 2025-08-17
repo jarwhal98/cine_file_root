@@ -51,6 +51,13 @@ class MovieViewModel: ObservableObject {
 
     private struct PreloadList: Decodable { let id: String; let name: String; let description: String; let source: String; let year: Int; let type: String; let resource: String }
     private struct PreloadConfig: Decodable { let lists: [PreloadList] }
+    // Import row with optional director (for better disambiguation)
+    struct ImportRow {
+        let rank: Int
+        let title: String
+        let year: Int
+        let director: String? // pass when known (e.g., TSPDT), else nil
+    }
 
     @MainActor
     func startInitialPreloadIfNeeded() {
@@ -93,14 +100,14 @@ class MovieViewModel: ObservableObject {
                 for (idx, item) in cfg.lists.enumerated() {
                     if importCancelled { break }
                     self.preloadStatus = "Importing \(item.name)…"
-                    let rows: [(Int, String, Int)]
+                    let rows: [ImportRow]
                     switch item.type {
                     case "csv-nyt21":
-                        rows = (try CSVImporter.loadNYT21(fileName: item.resource)).map { ($0.rank, $0.title, $0.year) }
+                        rows = try CSVImporter.loadNYT21(fileName: item.resource).map { ImportRow(rank: $0.rank, title: $0.title, year: $0.year, director: nil) }
                     case "csv-afi":
-                        rows = (try CSVImporter.loadAFI(fileName: item.resource)).map { ($0.rank, $0.title, $0.year) }
+                        rows = try CSVImporter.loadAFI(fileName: item.resource).map { ImportRow(rank: $0.rank, title: $0.title, year: $0.year, director: nil) }
                     case "csv-tspdt":
-                        rows = (try CSVImporter.loadTSPDT(fileName: item.resource)).map { ($0.rank, $0.title, $0.year) }
+                        rows = try CSVImporter.loadTSPDT(fileName: item.resource).map { ImportRow(rank: $0.rank, title: $0.title, year: $0.year, director: $0.director) }
                     default:
                         rows = []
                     }
@@ -357,7 +364,8 @@ class MovieViewModel: ObservableObject {
             do {
                 self.importCancelled = false
                 let rows = try CSVImporter.loadNYT21(fileName: "nyt_best_movies_21st_century")
-                try await importList(rows: rows.map { ($0.rank, $0.title, $0.year) }, listID: "nytimes-100-21st-century")
+                    .map { ImportRow(rank: $0.rank, title: $0.title, year: $0.year, director: nil) }
+                try await importList(rows: rows, listID: "nytimes-100-21st-century")
             } catch {
                 self.errorMessage = error.localizedDescription
             }
@@ -369,14 +377,15 @@ class MovieViewModel: ObservableObject {
             do {
                 self.importCancelled = false
                 let rows = try CSVImporter.loadAFI(fileName: "afi_top_100_2007")
-                try await importList(rows: rows.map { ($0.rank, $0.title, $0.year) }, listID: "afi-100-2007")
+                    .map { ImportRow(rank: $0.rank, title: $0.title, year: $0.year, director: nil) }
+                try await importList(rows: rows, listID: "afi-100-2007")
             } catch {
                 self.errorMessage = error.localizedDescription
             }
         }
     }
 
-    private func importList(rows: [(Int, String, Int)], listID: String, progress: ((Double) -> Void)? = nil) async throws {
+    private func importList(rows: [ImportRow], listID: String, progress: ((Double) -> Void)? = nil) async throws {
     isImporting = true
         importProgress = 0
         let total = max(rows.count, 1)
@@ -393,16 +402,18 @@ class MovieViewModel: ObservableObject {
         func launchNext() {
         if importCancelled { return }
             if let next = iterator.next() {
-                let (rank, title, year) = next
+                let row = next
                 let task = Task<Movie?, Error> {
             let includeAdult = UserDefaults.standard.bool(forKey: "showAdultContent")
-            let results = try await tmdb.search(query: title, year: year, includeDetails: false, includeAdult: includeAdult)
-                    if let movie = results.first(where: { $0.year == year }) ?? results.first {
-                        var m = movie
-                        m.listRankings[listID] = rank
-                        return m
-                    }
-                    return nil
+            // Fetch with details so we have director/runtime/genres for list rows
+            let results = try await tmdb.search(query: row.title, year: row.year, includeDetails: true, includeAdult: includeAdult)
+            // Pick best candidate
+            if let best = self.pickBestMatch(from: results, for: row) {
+                var m = best
+                m.listRankings[listID] = row.rank
+                return m
+            }
+            return nil
                 }
                 inFlight.append(task)
             }
@@ -476,6 +487,53 @@ class MovieViewModel: ObservableObject {
             movieLists.append(newList)
             selectList(newList.id)
         }
+    }
+
+    // MARK: - Matching Heuristics
+    private func normalizeTitle(_ s: String) -> String {
+        let lowered = s.lowercased()
+        let stripped = lowered.replacingOccurrences(of: "[\\p{Punct}]", with: "", options: .regularExpression)
+        return stripped.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func directorLastName(_ s: String) -> String {
+        return s.split(separator: " ").last.map(String.init) ?? s
+    }
+
+    private func pickBestMatch(from results: [Movie], for row: ImportRow) -> Movie? {
+        guard !results.isEmpty else { return nil }
+        let queryNorm = normalizeTitle(row.title)
+        let forbidden = ["making of", "making-of", "behind the scenes", "behind-the-scenes", "the making of", "@"]
+
+        func score(_ m: Movie) -> Int {
+            var sc = 0
+            let titleNorm = normalizeTitle(m.title)
+            if titleNorm == queryNorm { sc += 100 }
+            if m.year == row.year { sc += 50 }
+            if abs(m.year - row.year) == 1 { sc += 10 }
+            if let dir = row.director, !dir.isEmpty {
+                let ln = directorLastName(dir.lowercased())
+                let md = m.director.lowercased()
+                if !md.isEmpty {
+                    if md.contains(ln) { sc += 50 }
+                    else if md.split(separator: " ").contains(where: { $0 == Substring(ln) }) { sc += 30 }
+                }
+            }
+            let lowerTitle = m.title.lowercased()
+            if forbidden.contains(where: { lowerTitle.contains($0) }) { sc -= 60 }
+            return sc
+        }
+
+        // Prefer highest score; tie-breaker by criticRating descending
+        let scored = results.map { ($0, score($0)) }
+        if let best = scored.max(by: { (a, b) in
+            if a.1 == b.1 { return a.0.criticRating < b.0.criticRating }
+            return a.1 < b.1
+        }), best.1 > -1000 {
+            return best.0
+        }
+        // Fallback to previous behavior
+        return results.first(where: { $0.year == row.year }) ?? results.first
     }
 
     func cancelImport() {

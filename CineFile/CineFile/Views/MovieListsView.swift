@@ -88,7 +88,11 @@ struct MovieListsView: View {
                             }
                             .buttonStyle(.plain)
 
-                            // Progress
+                            // Source + Progress
+                            if !selectedList.source.isEmpty {
+                                SourceChip(text: selectedList.source)
+                                    .padding(.top, 2)
+                            }
                             let (watched, total) = viewModel.calculateListCompletion(for: selectedList.id)
                             let progress = viewModel.calculateListProgress(for: selectedList.id)
                             VStack(spacing: 2) {
@@ -267,16 +271,22 @@ struct MovieListRowView: View {
                     .foregroundColor(.primary)
                     .lineLimit(2)
                 
-                Text("\(movie.year) • \(movie.director)")
+                Text(movie.director.isEmpty ? "\(movie.year)" : "\(movie.year) • \(movie.director)")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
                 
                 // Runtime and genres
-                Text("\(movie.runtime) min • \(movie.genres.joined(separator: ", "))")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
+                if movie.runtime > 0 || !movie.genres.isEmpty {
+                    let parts: [String] = [
+                        movie.runtime > 0 ? "\(movie.runtime) min" : nil,
+                        !movie.genres.isEmpty ? movie.genres.joined(separator: ", ") : nil
+                    ].compactMap { $0 }
+                    Text(parts.joined(separator: " • "))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
                 
                 // Status indicators
                 HStack(spacing: 10) {
@@ -389,12 +399,15 @@ struct ListSelectorView: View {
                                 Text(list.name)
                                     .font(.headline)
                                 
-                                Text(list.source)
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                                HStack(spacing: 8) {
+                                    SourceChip(text: list.source)
+                                    Text(String(list.year))
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
                                 
                                 let (watched, total) = viewModel.calculateListCompletion(for: list.id)
-                                Text("\(watched)/\(total) watched • \(list.year)")
+                                Text("\(watched)/\(total) watched")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }

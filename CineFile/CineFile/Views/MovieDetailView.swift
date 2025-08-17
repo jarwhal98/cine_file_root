@@ -99,9 +99,11 @@ struct MovieDetailView: View {
                                 .font(.subheadline)
                                 .foregroundColor(.white.opacity(0.8))
                             
-                            Text(updatedMovie.director)
+                            if !updatedMovie.director.isEmpty {
+                                Text(updatedMovie.director)
                                 .font(.subheadline)
                                 .foregroundColor(.white.opacity(0.8))
+                            }
                             
                             // Ratings
                             HStack {
@@ -237,7 +239,7 @@ struct MovieDetailView: View {
                             updatedMovie.listRankings.keys.contains(list.id)
                         }, id: \.id) { list in
                             if let rank = updatedMovie.listRankings[list.id] {
-                                HStack {
+                                HStack(spacing: 8) {
                                     Text("#\(rank)")
                                         .font(.subheadline)
                                         .fontWeight(.bold)
@@ -252,12 +254,8 @@ struct MovieDetailView: View {
                                     
                                     Text(list.name)
                                         .font(.subheadline)
-                                    
+                                    SourceChip(text: list.source)
                                     Spacer()
-                                    
-                                    Text(String(list.year))
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
                                 }
                                 .padding(.vertical, 4)
                             }

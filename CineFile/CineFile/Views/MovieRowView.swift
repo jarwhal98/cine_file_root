@@ -37,16 +37,22 @@ struct MovieRowView: View {
                     .font(.headline)
                     .lineLimit(1)
                 
-                Text("\(movie.year) • \(movie.director)")
+                Text(movie.director.isEmpty ? "\(movie.year)" : "\(movie.year) • \(movie.director)")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
                 
                 // Runtime and genres
-                Text("\(movie.runtime) min • \(movie.genres.joined(separator: ", "))")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
+                if movie.runtime > 0 || !movie.genres.isEmpty {
+                    let parts: [String] = [
+                        movie.runtime > 0 ? "\(movie.runtime) min" : nil,
+                        !movie.genres.isEmpty ? movie.genres.joined(separator: ", ") : nil
+                    ].compactMap { $0 }
+                    Text(parts.joined(separator: " • "))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
                 
                 // Status indicators
                 HStack(spacing: 10) {
