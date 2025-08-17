@@ -10,6 +10,12 @@ enum AppColors {
     static let card = Color(red: 239/255, green: 239/255, blue: 239/255) // #EFEFEF
 }
 
+    extension View {
+        // Opt-in glass background convenience for headers
+        func glassHeaderBackground() -> some View {
+            self.background(.ultraThinMaterial)
+        }
+    }
 enum AppTheme {
     static func applyAppearance() {
         #if os(iOS)

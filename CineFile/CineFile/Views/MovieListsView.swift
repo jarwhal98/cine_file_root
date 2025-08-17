@@ -5,119 +5,56 @@ struct MovieListsView: View {
     @State private var showingListSelector = false
     @State private var ratingSheetMovie: Movie? = nil
     @State private var ratingSheetUserRating: Double = 0
-        // Tanner background tone for the whole screen
-        // private var appBackground: Color { Color(red: 0.97, green: 0.95, blue: 0.90) }
-        private var appBackground: Color { AppColors.background }
-    
+    @Namespace private var filterNamespace
+    @State private var filterPulse = false
+    private var appBackground: Color { AppColors.background }
+
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Movie list with a custom pinned header via safeAreaInset; progress + filters scroll away
-        List {
-                    if let selectedList = viewModel.selectedList {
-            // Minimal spacer to avoid overlap with pinned header
-            Color.clear.frame(height: 2).listRowBackground(appBackground)
-                        // Row 1: progress + filters (scroll away)
-                        let (watched, total) = viewModel.calculateListCompletion(for: selectedList.id)
-                        let progress = viewModel.calculateListProgress(for: selectedList.id)
-            VStack(spacing: 8) {
-                VStack(spacing: 4) {
-                                    GeometryReader { geometry in
-                                        ZStack(alignment: .leading) {
-                                            Rectangle()
-                                                .foregroundColor(Color(.systemGray5))
-                                                .frame(width: geometry.size.width, height: 6)
-                                                .cornerRadius(4)
-                                            Rectangle()
-                                                .foregroundColor(Color(.systemGray3))
-                                                .frame(width: geometry.size.width * CGFloat(progress), height: 6)
-                                                .cornerRadius(4)
-                                        }
+                // Movies list (header is pinned via safeAreaInset)
+                List {
+                    if viewModel.selectedList != nil {
+                        ForEach(viewModel.selectedListMovies) { movie in
+                            NavigationLink(destination: MovieDetailView(movie: movie)) {
+                                MovieListRowView(
+                                    movie: movie,
+                                    listID: viewModel.selectedList?.id,
+                                    toggleSeen: {
+                                        if !movie.watched { viewModel.toggleWatched(for: movie) }
+                                        ratingSheetUserRating = movie.userRating ?? 0
+                                        ratingSheetMovie = movie
                                     }
-                                    .frame(height: 6)
-                                    Text("\(watched) of \(total) watched (\(Int(progress * 100))%)")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                                .padding(.horizontal)
-
-                                // Sort options with direction toggle
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 8) {
-                                        ForEach(MovieSortOption.allCases, id: \.self) { option in
-                                            Button(action: { viewModel.setSortOption(option) }) {
-                                                HStack(spacing: 4) {
-                                                    Text(option.rawValue)
-                                                        .font(.subheadline)
-                                                        .fontWeight(viewModel.sortOption == option ? .semibold : .regular)
-                                                    if viewModel.sortOption == option {
-                                                        Text(viewModel.isEffectiveAscending(for: option) ? "▲" : "▼")
-                                                            .font(.caption2)
-                                                            .accessibilityHidden(true)
-                                                    }
-                                                }
-                                                .padding(.horizontal, 10)
-                                                .padding(.vertical, 6)
-                                                .background(viewModel.sortOption == option ? Color(.systemGray5) : Color(.systemGray6))
-                                                .foregroundColor(viewModel.sortOption == option ? Color.primary : Color.secondary)
-                                                .cornerRadius(10)
-                                                .contentShape(Rectangle())
-                                            }
-                                            .buttonStyle(.plain)
-                                            .accessibilityLabel("Sort by \(option.rawValue) \(viewModel.isEffectiveAscending(for: option) ? "ascending" : "descending")")
-                                        }
-                                    }
-                                    .padding(.horizontal)
-                                    .padding(.vertical, 8)
-                                }
+                                )
                             }
-                            .padding(.top, 0)
-                            .padding(.bottom, 2)
                             .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                             .listRowBackground(appBackground)
-
-                        // Rows 2...: movies
-                        ForEach(viewModel.selectedListMovies) { movie in
-                        NavigationLink(destination: MovieDetailView(movie: movie)) {
-                            MovieListRowView(movie: movie, listID: viewModel.selectedList?.id, toggleSeen: {
-                                // If not watched, mark watched and open rating sheet. If already watched, open rating sheet.
-                                if !movie.watched {
-                                    viewModel.toggleWatched(for: movie)
+                            .overlay(Rectangle().fill(appBackground).frame(height: 0.001), alignment: .bottom)
+                            .swipeActions(edge: .trailing) {
+                                Button {
+                                    viewModel.toggleWatchlist(for: movie)
+                                } label: {
+                                    Label(movie.inWatchlist ? "Remove" : "Watchlist",
+                                          systemImage: movie.inWatchlist ? "bookmark.slash" : "bookmark")
                                 }
-                                ratingSheetUserRating = movie.userRating ?? 0
-                                ratingSheetMovie = movie
-                            })
-                        }
-                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                        .listRowBackground(appBackground)
-                        .overlay(Rectangle().fill(appBackground).frame(height: 0.001), alignment: .bottom)
-                        .swipeActions(edge: .trailing) {
-                            Button {
-                                viewModel.toggleWatchlist(for: movie)
-                            } label: {
-                                Label(movie.inWatchlist ? "Remove" : "Watchlist",
-                                      systemImage: movie.inWatchlist ? "bookmark.slash" : "bookmark")
+                                .tint(.blue)
                             }
-                            .tint(.blue)
-                        }
-                        .swipeActions(edge: .leading) {
-                            Button {
-                                if movie.watched {
-                                    // Unwatch without opening sheet
-                                    viewModel.toggleWatched(for: movie)
-                                } else {
-                                    // Mark watched and open rating sheet
-                                    viewModel.toggleWatched(for: movie)
-                                    ratingSheetUserRating = movie.userRating ?? 0
-                                    ratingSheetMovie = movie
+                            .swipeActions(edge: .leading) {
+                                Button {
+                                    if movie.watched {
+                                        viewModel.toggleWatched(for: movie)
+                                    } else {
+                                        viewModel.toggleWatched(for: movie)
+                                        ratingSheetUserRating = movie.userRating ?? 0
+                                        ratingSheetMovie = movie
+                                    }
+                                } label: {
+                                    Label(movie.watched ? "Unwatched" : "Watched",
+                                          systemImage: movie.watched ? "eye.slash" : "eye")
                                 }
-                            } label: {
-                                Label(movie.watched ? "Unwatched" : "Watched",
-                                      systemImage: movie.watched ? "eye.slash" : "eye")
+                                .tint(.green)
                             }
-                            .tint(.green)
-                            }
-                        } // end ForEach movies
+                        }
                     }
                 }
                 .listStyle(PlainListStyle())
@@ -128,33 +65,125 @@ struct MovieListsView: View {
                 .listRowBackground(appBackground)
                 .legacyListBackground(appBackground)
                 .background(appBackground)
-                // Pinned title just under navigation bar
+                // Fully pinned header (title + progress + filters)
                 .safeAreaInset(edge: .top) {
                     if let selectedList = viewModel.selectedList {
-                        Button(action: { showingListSelector = true }) {
-                            HStack(spacing: 6) {
-                                Spacer(minLength: 0)
-                                Text(selectedList.name)
-                                    .font(.system(.title2, design: .serif))
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.primary)
-                                    .multilineTextAlignment(.center)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                Image(systemName: "chevron.down")
-                                    .font(.footnote)
-                                    .foregroundColor(.secondary)
-                                Spacer(minLength: 0)
+                        VStack(spacing: 4) {
+                            // Title selector
+                            Button(action: { showingListSelector = true }) {
+                                HStack(spacing: 6) {
+                                    Spacer(minLength: 0)
+                                    Text(selectedList.name)
+                                        .font(.system(.title2, design: .serif))
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.primary)
+                                        .multilineTextAlignment(.center)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                    Image(systemName: "chevron.down")
+                                        .font(.footnote)
+                                        .foregroundColor(.secondary)
+                                    Spacer(minLength: 0)
+                                }
+                                .contentShape(Rectangle())
                             }
-                            .contentShape(Rectangle())
+                            .buttonStyle(.plain)
+
+                            // Progress
+                            let (watched, total) = viewModel.calculateListCompletion(for: selectedList.id)
+                            let progress = viewModel.calculateListProgress(for: selectedList.id)
+                            VStack(spacing: 2) {
+                                GeometryReader { geometry in
+                                    ZStack(alignment: .leading) {
+                                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                            .fill(Color(.systemGray5).opacity(0.9))
+                                            .frame(width: geometry.size.width, height: 6)
+                                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                            .fill(Color(.systemGray3))
+                                            .frame(width: geometry.size.width * CGFloat(progress), height: 6)
+                                    }
+                                }
+                                .frame(height: 6)
+                                Text("\(watched) of \(total) watched (\(Int(progress * 100))%)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.horizontal)
+
+                            // Filters with sliding glass bubble + pulse
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(MovieSortOption.allCases, id: \.self) { option in
+                                        let isSelected = viewModel.sortOption == option
+                                        Button(action: { viewModel.setSortOption(option) }) {
+                                            ZStack {
+                                                if isSelected {
+                                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                                        .fill(.ultraThinMaterial)
+                                                        // Subtle accent tint to match app palette
+                                                        .overlay(
+                                                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                                                .fill(Color.accentColor.opacity(0.08))
+                                                        )
+                                                        .overlay(
+                                                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                                                .stroke(Color.white.opacity(0.35), lineWidth: 0.5)
+                                                        )
+                                                        .matchedGeometryEffect(id: "filterBubble", in: filterNamespace)
+                                                        .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+                                                }
+                                                HStack(spacing: 6) {
+                                                    Text(option.rawValue)
+                                                        .font(.subheadline)
+                                                        .fontWeight(isSelected ? .semibold : .regular)
+                                                    if isSelected {
+                                                        Text(viewModel.isEffectiveAscending(for: option) ? "▲" : "▼")
+                                                            .font(.caption2)
+                                                            .accessibilityHidden(true)
+                                                    }
+                                                }
+                                                .padding(.horizontal, 14)
+                                            }
+                                            .scaleEffect(isSelected && filterPulse ? 1.06 : 1.0)
+                                            .frame(height: 32)
+                                            .fixedSize()
+                                        }
+                                        .buttonStyle(.plain)
+                                        .foregroundColor(.primary)
+                                        .contentShape(Rectangle())
+                                        .accessibilityLabel("Sort by \(option.rawValue) \(viewModel.isEffectiveAscending(for: option) ? "ascending" : "descending")")
+                                    }
+                                }
+                                .frame(height: 40)
+                                .padding(.horizontal)
+                                .padding(.vertical, 0)
+                            }
+                            .animation(.spring(response: 0.3, dampingFraction: 0.85), value: viewModel.sortOption)
+                            .onChange(of: viewModel.sortOption) { _ in
+                                withAnimation(.spring(response: 0.22, dampingFraction: 0.6)) { filterPulse = true }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) { filterPulse = false }
+                                }
+                            }
                         }
-            .padding(.vertical, 2)
-                        .background(appBackground.opacity(0.8))
-                        .overlay(
-                            Rectangle()
-                .fill(Color.black.opacity(0.06))
-                                .frame(height: 0.5)
-                                .frame(maxHeight: .infinity, alignment: .bottom)
-                                .ignoresSafeArea(edges: .horizontal)
+                        .padding(.top, 0)
+                        .padding(.bottom, 0)
+                        .background(
+                            ZStack {
+                                // Base glass material at current opacity
+                                Rectangle().fill(.regularMaterial).opacity(0.82)
+                                // Opacity ramp: clearer near filters, more opaque toward the top (CineFile title)
+                                LinearGradient(
+                                    colors: [
+                                        AppColors.background.opacity(0.00),
+                                        AppColors.background.opacity(0.06),
+                                        AppColors.background.opacity(0.12),
+                                        AppColors.background.opacity(0.18),
+                                        AppColors.background.opacity(0.22)
+                                    ],
+                                    startPoint: .bottom,
+                                    endPoint: .top
+                                )
+                            }
                         )
                     }
                 }
@@ -165,7 +194,6 @@ struct MovieListsView: View {
             .sheet(isPresented: $showingListSelector) {
                 ListSelectorView(isPresented: $showingListSelector)
             }
-            // Rating sheet presented from list "seen" interactions
             .sheet(item: $ratingSheetMovie) { movie in
                 let isPresentedBinding = Binding<Bool>(
                     get: { ratingSheetMovie != nil },
@@ -185,7 +213,7 @@ struct MovieListRowView: View {
     var toggleSeen: (() -> Void)? = nil
     
     var body: some View {
-    HStack(spacing: 15) {
+        HStack(spacing: 15) {
             // Rank indicator (prefer rank for selected list; fallback to best rank across lists)
             let rankValue: Int? = {
                 if let id = listID, id != MovieViewModel.allListsID {
@@ -201,7 +229,7 @@ struct MovieListRowView: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                     .frame(width: 44, alignment: .trailing)
-            .foregroundColor(.primary)
+                    .foregroundColor(.primary)
                     .accessibilityLabel("Rank \(rank)")
             }
             
@@ -259,8 +287,6 @@ struct MovieListRowView: View {
                         }
                         .buttonStyle(.borderless)
                     }
-                    
-                    // Critic rating
                     HStack(spacing: 2) {
                         Image(systemName: "star.fill")
                             .foregroundColor(.yellow)
@@ -319,7 +345,7 @@ struct MovieListRowView: View {
         )
         .compositingGroup()
         .padding(.vertical, 8)
-    .listRowBackground(AppColors.background)
+        .listRowBackground(AppColors.background)
         .listRowSeparator(.hidden)
     }
 }
