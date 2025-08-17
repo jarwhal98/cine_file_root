@@ -8,6 +8,7 @@ struct MovieListsView: View {
     @Namespace private var filterNamespace
     @State private var filterPulse = false
     private var appBackground: Color { AppColors.background }
+    @State private var showingManageLists = false
 
     var body: some View {
         NavigationView {
@@ -198,6 +199,10 @@ struct MovieListsView: View {
             .sheet(isPresented: $showingListSelector) {
                 ListSelectorView(isPresented: $showingListSelector)
             }
+            .sheet(isPresented: $showingManageLists) {
+                ManageListsView(isPresented: $showingManageLists)
+                    .environmentObject(viewModel)
+            }
             .sheet(item: $ratingSheetMovie) { movie in
                 let isPresentedBinding = Binding<Bool>(
                     get: { ratingSheetMovie != nil },
@@ -207,6 +212,9 @@ struct MovieListsView: View {
                     .environmentObject(viewModel)
             }
             .background(appBackground.ignoresSafeArea())
+            .onReceive(NotificationCenter.default.publisher(for: .showManageLists)) { _ in
+                showingManageLists = true
+            }
         }
     }
 }
@@ -368,6 +376,16 @@ struct ListSelectorView: View {
     var body: some View {
         NavigationView {
             List {
+                // Add lists CTA
+                Button(action: { isPresented = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { NotificationCenter.default.post(name: .showManageLists, object: nil) } }) {
+                    HStack {
+                        Image(systemName: "plus.circle.fill").foregroundColor(.accentColor)
+                        Text("Add Lists…")
+                        Spacer()
+                    }
+                }
+                .padding(.vertical, 8)
+
                 Button(action: {
                     viewModel.selectList(MovieViewModel.allListsID)
                     isPresented = false
@@ -439,5 +457,58 @@ struct ListSelectorView: View {
             }
         }
         .background(AppColors.background)
+    }
+}
+
+// MARK: - Manage Lists (optional additions)
+fileprivate extension Notification.Name { static let showManageLists = Notification.Name("ShowManageListsSheet") }
+
+struct ManageListsView: View {
+    @EnvironmentObject var viewModel: MovieViewModel
+    @Binding var isPresented: Bool
+    @State private var selected: Set<String> = []
+
+    var body: some View {
+        NavigationView {
+            List {
+                let items = viewModel.uninstalledPreloadItems()
+                if items.isEmpty {
+                    Text("All available lists are already installed.")
+                        .foregroundColor(.secondary)
+                } else {
+                    ForEach(items) { item in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(item.name).font(.headline)
+                                HStack(spacing: 8) {
+                                    SourceChip(text: item.source)
+                                    Text(String(item.year)).font(.caption).foregroundColor(.secondary)
+                                }
+                                Text(item.description).font(.caption).foregroundColor(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: selected.contains(item.id) ? "checkmark.circle.fill" : "circle")
+                                .foregroundColor(selected.contains(item.id) ? .accentColor : .secondary)
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            if selected.contains(item.id) { selected.remove(item.id) } else { selected.insert(item.id) }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Add Lists")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) { Button("Close") { isPresented = false } }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Import") {
+                        let ids = Array(selected)
+                        isPresented = false
+                        Task { await viewModel.importPreloadLists(ids: ids) }
+                    }
+                    .disabled(selected.isEmpty)
+                }
+            }
+        }
     }
 }

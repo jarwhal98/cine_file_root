@@ -51,6 +51,7 @@ class MovieViewModel: ObservableObject {
 
     private struct PreloadList: Decodable { let id: String; let name: String; let description: String; let source: String; let year: Int; let type: String; let resource: String }
     private struct PreloadConfig: Decodable { let lists: [PreloadList] }
+    struct PreloadListUI: Identifiable { let id: String; let name: String; let description: String; let source: String; let year: Int }
     // Import row with optional director (for better disambiguation)
     struct ImportRow {
         let rank: Int
@@ -136,6 +137,74 @@ class MovieViewModel: ObservableObject {
                 self.preloadStatus = "Failed: \(error.localizedDescription)"
             }
         }
+    }
+
+    // MARK: - Preload Catalog helpers
+    private func loadPreloadConfig() -> PreloadConfig? {
+        guard let url = Bundle.main.url(forResource: "preloaded_lists", withExtension: "json") else { return nil }
+        do {
+            let data = try Data(contentsOf: url)
+            return try JSONDecoder().decode(PreloadConfig.self, from: data)
+        } catch {
+            logger.error("Failed to load preloaded_lists: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    func uninstalledPreloadItems() -> [PreloadListUI] {
+        guard let cfg = loadPreloadConfig() else { return [] }
+        let installedIDs = Set(movieLists.map { $0.id })
+        return cfg.lists
+            .filter { !installedIDs.contains($0.id) }
+            .map { PreloadListUI(id: $0.id, name: $0.name, description: $0.description, source: $0.source, year: $0.year) }
+            .sorted { $0.name < $1.name }
+    }
+
+    @MainActor
+    func importPreloadLists(ids: [String]) async {
+        guard let cfg = loadPreloadConfig() else { return }
+        let items = cfg.lists.filter { ids.contains($0.id) }
+        guard !items.isEmpty else { return }
+        isImporting = true
+        importProgress = 0
+        preloadStatus = "Importing…"
+        var totalRows = 0
+        for item in items {
+            switch item.type {
+            case "csv-nyt21": totalRows += (try? CSVImporter.loadNYT21(fileName: item.resource).count) ?? 0
+            case "csv-afi": totalRows += (try? CSVImporter.loadAFI(fileName: item.resource).count) ?? 0
+            case "csv-tspdt": totalRows += (try? CSVImporter.loadTSPDT(fileName: item.resource).count) ?? 0
+            default: break
+            }
+        }
+        var processedRows = 0
+        for item in items {
+            if importCancelled { break }
+            preloadStatus = "Importing \(item.name)…"
+            let rows: [ImportRow]
+            switch item.type {
+            case "csv-nyt21":
+                rows = (try? CSVImporter.loadNYT21(fileName: item.resource).map { ImportRow(rank: $0.rank, title: $0.title, year: $0.year, director: nil) }) ?? []
+            case "csv-afi":
+                rows = (try? CSVImporter.loadAFI(fileName: item.resource).map { ImportRow(rank: $0.rank, title: $0.title, year: $0.year, director: nil) }) ?? []
+            case "csv-tspdt":
+                rows = (try? CSVImporter.loadTSPDT(fileName: item.resource).map { ImportRow(rank: $0.rank, title: $0.title, year: $0.year, director: $0.director) }) ?? []
+            default:
+                rows = []
+            }
+            do {
+                try await importList(rows: rows, listID: item.id, progress: { local in
+                    let completedWithinList = Double(processedRows) + local * Double(rows.count)
+                    self.importProgress = totalRows == 0 ? 1.0 : completedWithinList / Double(totalRows)
+                })
+            } catch {
+                logger.error("Import failed for \(item.id): \(error.localizedDescription)")
+            }
+            processedRows += rows.count
+        }
+        isImporting = false
+        preloadStatus = "Ready"
+        updateSelectedListMovies()
     }
     
     // MARK: - List Management
