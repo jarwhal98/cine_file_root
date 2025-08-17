@@ -12,11 +12,11 @@ struct MovieListsView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Movie list with pinned title header; progress + filters scroll with content
+                // Movie list with pinned title header; all rows within a single section
                 List {
                     if let selectedList = viewModel.selectedList {
                         Section {
-                            // Row: progress + filters (scroll away)
+                            // Row 1: progress + filters (scroll away)
                             let (watched, total) = viewModel.calculateListCompletion(for: selectedList.id)
                             let progress = viewModel.calculateListProgress(for: selectedList.id)
                             VStack(spacing: 16) {
@@ -71,35 +71,12 @@ struct MovieListsView: View {
                                 }
                             }
                             .padding(.top, 6)
-                            .padding(.bottom, 8)
+                            .padding(.bottom, 4)
                             .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                             .listRowBackground(appBackground)
-                        } header: {
-                            // Pinned header: just the list title button
-                            Button(action: { showingListSelector = true }) {
-                                HStack(spacing: 6) {
-                                    Spacer(minLength: 0)
-                                    Text(selectedList.name)
-                                        .font(.system(.title2, design: .serif))
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(.primary)
-                                        .multilineTextAlignment(.center)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                    Image(systemName: "chevron.down")
-                                        .font(.footnote)
-                                        .foregroundColor(.secondary)
-                                    Spacer(minLength: 0)
-                                }
-                                .contentShape(Rectangle())
-                            }
-                            .padding(.top, 4)
-                            .padding(.bottom, 6)
-                            .background(appBackground)
-                        }
-                    }
 
-                    // Movie rows
-                    ForEach(viewModel.selectedListMovies) { movie in
+                            // Rows 2...: movies (still within this Section to keep title pinned)
+                            ForEach(viewModel.selectedListMovies) { movie in
                         NavigationLink(destination: MovieDetailView(movie: movie)) {
                             MovieListRowView(movie: movie, listID: viewModel.selectedList?.id, toggleSeen: {
                                 // If not watched, mark watched and open rating sheet. If already watched, open rating sheet.
@@ -135,6 +112,28 @@ struct MovieListsView: View {
                                       systemImage: movie.watched ? "eye.slash" : "eye")
                             }
                             .tint(.green)
+                            }
+                        } header: {
+                            // Pinned header: just the list title button
+                            Button(action: { showingListSelector = true }) {
+                                HStack(spacing: 6) {
+                                    Spacer(minLength: 0)
+                                    Text(selectedList.name)
+                                        .font(.system(.title2, design: .serif))
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.primary)
+                                        .multilineTextAlignment(.center)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                    Image(systemName: "chevron.down")
+                                        .font(.footnote)
+                                        .foregroundColor(.secondary)
+                                    Spacer(minLength: 0)
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .padding(.top, 4)
+                            .padding(.bottom, 6)
+                            .background(appBackground)
                         }
                     }
                 }
@@ -142,6 +141,9 @@ struct MovieListsView: View {
                 .listRowSeparator(.hidden)
                 .listSectionSeparator(.hidden)
                 .hideScrollBackground()
+                .stickySectionHeaders()
+                .listRowBackground(appBackground)
+                .legacyListBackground(appBackground)
                 .background(appBackground)
             }
             .navigationTitle("CineFile")

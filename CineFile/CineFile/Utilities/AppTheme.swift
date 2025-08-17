@@ -23,3 +23,42 @@ struct HideScrollBackground: ViewModifier {
 extension View {
     func hideScrollBackground() -> some View { self.modifier(HideScrollBackground()) }
 }
+
+// Make List section headers sticky on iOS 16+, no-op on earlier versions
+struct StickySectionHeaders: ViewModifier {
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 16.0, *) {
+            content.listSectionHeaderBehavior(.sticky)
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    func stickySectionHeaders() -> some View { self.modifier(StickySectionHeaders()) }
+}
+
+// iOS 15 List background helper: Ensure UITableView background matches our theme and cells are clear
+struct LegacyListBackground: ViewModifier {
+    let color: Color
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                if #available(iOS 16.0, *) {
+                    // iOS 16+ handled by scrollContentBackground + listRowBackground
+                } else {
+                    #if os(iOS)
+                    let uiColor = UIColor(color)
+                    UITableView.appearance().backgroundColor = uiColor
+                    UITableViewCell.appearance().backgroundColor = .clear
+                    #endif
+                }
+            }
+    }
+}
+
+extension View {
+    func legacyListBackground(_ color: Color) -> some View { self.modifier(LegacyListBackground(color: color)) }
+}

@@ -123,6 +123,8 @@ struct SearchView: View {
             .listRowSeparator(.hidden)
             .listSectionSeparator(.hidden)
             .hideScrollBackground()
+            .listRowBackground(AppColors.background)
+            .legacyListBackground(AppColors.background)
             .background(AppColors.background)
                 }
             }
