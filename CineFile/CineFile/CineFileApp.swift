@@ -10,6 +10,7 @@ struct CineFileApp: App {
             ContentView()
                 .accentColor(.red)
                 .environmentObject(viewModel)
+                .onAppear { AppTheme.applyAppearance() }
         }
     }
 }

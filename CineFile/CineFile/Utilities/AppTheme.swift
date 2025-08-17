@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(iOS)
+import UIKit
+#endif
 
 // Centralized colors and lightweight UI helpers used across views
 enum AppColors {
@@ -6,6 +9,37 @@ enum AppColors {
     static let background = Color(red: 238/255, green: 232/255, blue: 213/255)
     // If we want cards to match the background exactly per latest direction
     static let card = background
+}
+
+enum AppTheme {
+    static func applyAppearance() {
+        #if os(iOS)
+        let bg = UIColor(red: 238/255, green: 232/255, blue: 213/255, alpha: 1)
+        if #available(iOS 15.0, *) {
+            let navAppearance = UINavigationBarAppearance()
+            navAppearance.configureWithOpaqueBackground()
+            navAppearance.backgroundColor = bg
+            navAppearance.shadowColor = .clear
+            UINavigationBar.appearance().standardAppearance = navAppearance
+            UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
+            UINavigationBar.appearance().compactAppearance = navAppearance
+
+            let tabAppearance = UITabBarAppearance()
+            tabAppearance.configureWithOpaqueBackground()
+            tabAppearance.backgroundColor = bg
+            tabAppearance.shadowColor = .clear
+            UITabBar.appearance().standardAppearance = tabAppearance
+            UITabBar.appearance().scrollEdgeAppearance = tabAppearance
+        } else {
+            UINavigationBar.appearance().isTranslucent = false
+            UINavigationBar.appearance().barTintColor = bg
+            UINavigationBar.appearance().backgroundColor = bg
+            UITabBar.appearance().isTranslucent = false
+            UITabBar.appearance().barTintColor = bg
+            UITabBar.appearance().backgroundColor = bg
+        }
+        #endif
+    }
 }
 
 // Hide the default scrollable background (List/Form/ScrollView) on iOS 16+

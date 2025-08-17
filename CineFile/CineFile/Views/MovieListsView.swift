@@ -121,6 +121,13 @@ struct MovieListsView: View {
                 .listRowBackground(appBackground)
                 .legacyListBackground(appBackground)
                 .background(appBackground)
+                .overlay(
+                    // Cover any remaining white from behind the list on new OSes
+                    Rectangle()
+                        .fill(appBackground)
+                        .ignoresSafeArea()
+                        .allowsHitTesting(false)
+                )
                 // Pinned title just under navigation bar
                 .safeAreaInset(edge: .top) {
                     if let selectedList = viewModel.selectedList {
