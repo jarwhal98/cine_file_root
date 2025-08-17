@@ -26,6 +26,7 @@
 	9A1C0F232D5A01E000ABCDEF /* CSVImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A1C0F222D5A01E000ABCDEF /* CSVImporter.swift */; };
 	9A1C0F262D5A026000ABCDEF /* nyt_best_movies_21st_century.csv in Resources */ = {isa = PBXBuildFile; fileRef = 9A1C0F242D5A026000ABCDEF /* nyt_best_movies_21st_century.csv */; };
 	9A1C0F272D5A026000ABCDEF /* afi_top_100_2007.csv in Resources */ = {isa = PBXBuildFile; fileRef = 9A1C0F252D5A026000ABCDEF /* afi_top_100_2007.csv */; };
+	DEADBEEF2D6A000100ABCDEF /* preloaded_lists.json in Resources */ = {isa = PBXBuildFile; fileRef = DEADBEEF2D6A000000ABCDEF /* preloaded_lists.json */; };
 	F1E2D3C52B6EA00100000002 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E2D3C42B6EA00100000001 /* AppTheme.swift */; };
 	AA11BB22CC33DD44EE55FF67 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF66 /* SplashView.swift */; };
 /* End PBXBuildFile section */
@@ -52,6 +53,7 @@
 	9A1C0F222D5A01E000ABCDEF /* CSVImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVImporter.swift; sourceTree = "<group>"; };
 	9A1C0F242D5A026000ABCDEF /* nyt_best_movies_21st_century.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = nyt_best_movies_21st_century.csv; sourceTree = "<group>"; };
 	9A1C0F252D5A026000ABCDEF /* afi_top_100_2007.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = afi_top_100_2007.csv; sourceTree = "<group>"; };
+	DEADBEEF2D6A000000ABCDEF /* preloaded_lists.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = preloaded_lists.json; sourceTree = "<group>"; };
 	F1E2D3C42B6EA00100000001 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 	AA11BB22CC33DD44EE55FF66 /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -141,6 +143,7 @@
 			children = (
 				9A1C0F242D5A026000ABCDEF /* nyt_best_movies_21st_century.csv */,
 				9A1C0F252D5A026000ABCDEF /* afi_top_100_2007.csv */,
+				DEADBEEF2D6A000000ABCDEF /* preloaded_lists.json */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -229,6 +232,7 @@
 				840A1B552B5D1E7C00721F12 /* Assets.xcassets in Resources */,
 				9A1C0F262D5A026000ABCDEF /* nyt_best_movies_21st_century.csv in Resources */,
 				9A1C0F272D5A026000ABCDEF /* afi_top_100_2007.csv in Resources */,
+				DEADBEEF2D6A000100ABCDEF /* preloaded_lists.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

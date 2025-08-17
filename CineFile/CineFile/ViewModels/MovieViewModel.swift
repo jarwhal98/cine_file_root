@@ -54,11 +54,7 @@ class MovieViewModel: ObservableObject {
 
     @MainActor
     func startInitialPreloadIfNeeded() {
-        // If we already have movies, consider preload done
-        if !movies.isEmpty {
-            preloadCompleted = true
-            return
-        }
+    // Always check resources and drive status; if movies exist we still treat as complete quickly
         isImporting = true
         importProgress = 0
         preloadStatus = "Preparing…"

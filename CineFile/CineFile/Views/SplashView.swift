@@ -82,7 +82,7 @@ struct SplashView: View {
                     .frame(width: min(w * 0.82, 520))
 
             // Progress bar while preloading
-            if !viewModel.preloadCompleted {
+            if viewModel.isImporting {
                 VStack(spacing: 8) {
                     ProgressView(value: viewModel.importProgress)
                         .progressViewStyle(LinearProgressViewStyle(tint: taglineColor))
@@ -92,7 +92,7 @@ struct SplashView: View {
                         .foregroundColor(.white.opacity(0.85))
                 }
                 .padding(.top, 6)
-            } else {
+            } else if viewModel.preloadCompleted {
                 // Begin button after preload completes
                 Button(action: { withAnimation(.easeOut(duration: 0.35)) { onFinished() } }) {
                     Text("Click to begin")
@@ -152,5 +152,6 @@ struct SplashView: View {
 struct SplashView_Previews: PreviewProvider {
     static var previews: some View {
         SplashView(onFinished: {})
+            .environmentObject(MovieViewModel())
     }
 }
