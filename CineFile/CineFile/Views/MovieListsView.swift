@@ -12,14 +12,13 @@ struct MovieListsView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Movie list with pinned title header; all rows within a single section
+                // Movie list with a custom pinned header via safeAreaInset; progress + filters scroll away
                 List {
                     if let selectedList = viewModel.selectedList {
-                        Section {
-                            // Row 1: progress + filters (scroll away)
-                            let (watched, total) = viewModel.calculateListCompletion(for: selectedList.id)
-                            let progress = viewModel.calculateListProgress(for: selectedList.id)
-                            VStack(spacing: 16) {
+                        // Row 1: progress + filters (scroll away)
+                        let (watched, total) = viewModel.calculateListCompletion(for: selectedList.id)
+                        let progress = viewModel.calculateListProgress(for: selectedList.id)
+                        VStack(spacing: 16) {
                                 VStack(spacing: 8) {
                                     GeometryReader { geometry in
                                         ZStack(alignment: .leading) {
@@ -75,8 +74,8 @@ struct MovieListsView: View {
                             .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                             .listRowBackground(appBackground)
 
-                            // Rows 2...: movies (still within this Section to keep title pinned)
-                            ForEach(viewModel.selectedListMovies) { movie in
+                        // Rows 2...: movies
+                        ForEach(viewModel.selectedListMovies) { movie in
                         NavigationLink(destination: MovieDetailView(movie: movie)) {
                             MovieListRowView(movie: movie, listID: viewModel.selectedList?.id, toggleSeen: {
                                 // If not watched, mark watched and open rating sheet. If already watched, open rating sheet.
@@ -114,48 +113,48 @@ struct MovieListsView: View {
                             .tint(.green)
                             }
                         } // end ForEach movies
-                        } header: {
-                            // Pinned header: just the list title button
-                            Button(action: { showingListSelector = true }) {
-                                HStack(spacing: 6) {
-                                    Spacer(minLength: 0)
-                                    Text(selectedList.name)
-                                        .font(.system(.title2, design: .serif))
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(.primary)
-                                        .multilineTextAlignment(.center)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                    Image(systemName: "chevron.down")
-                                        .font(.footnote)
-                                        .foregroundColor(.secondary)
-                                    Spacer(minLength: 0)
-                                }
-                                .contentShape(Rectangle())
-                            }
-                            .padding(.top, -8)
-                            .padding(.bottom, 2)
-                            .background(appBackground.opacity(0.98))
-                            .overlay(
-                                Rectangle()
-                                    .fill(Color.black.opacity(0.08))
-                                    .frame(height: 0.5)
-                                    .frame(maxHeight: .infinity, alignment: .bottom)
-                                    .ignoresSafeArea(edges: .horizontal)
-                            )
-                        }
                     }
                 }
                 .listStyle(PlainListStyle())
                 .listRowSeparator(.hidden)
-                .listSectionSeparator(.hidden)
                 .hideScrollBackground()
                 .listRowBackground(appBackground)
                 .legacyListBackground(appBackground)
                 .background(appBackground)
-                .navBarBackground(appBackground)
+                // Pinned title just under navigation bar
+                .safeAreaInset(edge: .top) {
+                    if let selectedList = viewModel.selectedList {
+                        Button(action: { showingListSelector = true }) {
+                            HStack(spacing: 6) {
+                                Spacer(minLength: 0)
+                                Text(selectedList.name)
+                                    .font(.system(.title2, design: .serif))
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.primary)
+                                    .multilineTextAlignment(.center)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Image(systemName: "chevron.down")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                                Spacer(minLength: 0)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .padding(.vertical, 4)
+                        .background(appBackground.opacity(0.98))
+                        .overlay(
+                            Rectangle()
+                                .fill(Color.black.opacity(0.08))
+                                .frame(height: 0.5)
+                                .frame(maxHeight: .infinity, alignment: .bottom)
+                                .ignoresSafeArea(edges: .horizontal)
+                        )
+                    }
+                }
             }
             .navigationTitle("CineFile")
             .navigationBarTitleDisplayMode(.inline)
+            .navBarBackground(appBackground)
             .sheet(isPresented: $showingListSelector) {
                 ListSelectorView(isPresented: $showingListSelector)
             }
