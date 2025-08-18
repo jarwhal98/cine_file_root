@@ -11,29 +11,6 @@ struct MovieListsView: View {
     private var appBackground: Color { AppColors.background }
     @State private var showingManageLists = false
 
-    // Reusable background used for the pinned header and the status-bar filler overlay
-    @ViewBuilder
-    private var headerBackground: some View {
-        if reduceTransparency {
-            AppColors.background.opacity(0.95)
-        } else {
-            ZStack {
-                Rectangle().fill(.regularMaterial).opacity(0.82)
-                LinearGradient(
-                    colors: [
-                        AppColors.background.opacity(0.00),
-                        AppColors.background.opacity(0.06),
-                        AppColors.background.opacity(0.12),
-                        AppColors.background.opacity(0.18),
-                        AppColors.background.opacity(0.22)
-                    ],
-                    startPoint: .bottom,
-                    endPoint: .top
-                )
-            }
-        }
-    }
-
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
@@ -196,18 +173,28 @@ struct MovieListsView: View {
                         }
                         .padding(.top, 0)
                         .padding(.bottom, 0)
-                        .background(headerBackground)
-                    }
-                }
-                // Fill the status-bar area with the same background as the header when nav bar is hidden
-                .overlay(alignment: .top) {
-                    if viewModel.selectedList != nil {
-                        GeometryReader { geo in
-                            headerBackground
-                                .frame(height: max(0, geo.safeAreaInsets.top))
-                                .ignoresSafeArea(edges: .top)
-                        }
-                        .frame(height: 0) // Don't affect layout; just read safeAreaInsets
+                        .background(
+                            Group {
+                                if reduceTransparency {
+                                    AppColors.background.opacity(0.95)
+                                } else {
+                                    ZStack {
+                                        Rectangle().fill(.regularMaterial).opacity(0.82)
+                                        LinearGradient(
+                                            colors: [
+                                                AppColors.background.opacity(0.00),
+                                                AppColors.background.opacity(0.06),
+                                                AppColors.background.opacity(0.12),
+                                                AppColors.background.opacity(0.18),
+                                                AppColors.background.opacity(0.22)
+                                            ],
+                                            startPoint: .bottom,
+                                            endPoint: .top
+                                        )
+                                    }
+                                }
+                            }
+                        )
                     }
                 }
             }
