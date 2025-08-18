@@ -374,7 +374,7 @@ struct MovieRatingView: View {
                     .font(.subheadline)
                     .foregroundColor(.secondary)
 
-                Text("Tap to Rate (half-stars)")
+                Text("Drag or Tap to Rate (half-stars)")
                     .font(.headline)
 
                 // Ten stars with half-star tap detection
@@ -444,6 +444,32 @@ private struct StarRatingView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Rating")
         .accessibilityValue(String(format: "%.1f out of 10", rating))
+        // Allow sliding across the entire row to adjust rating
+        .overlay(
+            GeometryReader { geo in
+                Color.clear
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { value in
+                                updateRating(at: value.location.x, width: geo.size.width)
+                            }
+                            .onEnded { value in
+                                updateRating(at: value.location.x, width: geo.size.width)
+                            }
+                    )
+            }
+        )
+    }
+
+    private func updateRating(at x: CGFloat, width: CGFloat) {
+        guard width > 0 else { return }
+        let clampedX = min(max(0, x), width)
+        let proportion = clampedX / width
+        let rawStars = Double(proportion) * Double(maxStars)
+        let halfSteps = (rawStars * 2.0).rounded() // nearest 0.5
+        let newRating = min(Double(maxStars), max(0.0, halfSteps / 2.0))
+        rating = newRating
     }
 }
 
@@ -460,21 +486,5 @@ private struct StarView: View {
         Image(systemName: symbol)
             .font(.title2)
             .foregroundColor((rating >= fullThreshold - 0.5) ? .yellow : .gray)
-            .overlay(
-                GeometryReader { geo in
-                    Color.clear
-                        .contentShape(Rectangle())
-                        .gesture(
-                            DragGesture(minimumDistance: 0)
-                                .onEnded { value in
-                                    let half: Double = value.location.x < geo.size.width / 2 ? 0.5 : 1.0
-                                    var newRating = Double(index) + half
-                                    // Clamp between 0 and 10
-                                    newRating = max(0, min(10, newRating))
-                                    rating = newRating
-                                }
-                        )
-                }
-            )
     }
 }
