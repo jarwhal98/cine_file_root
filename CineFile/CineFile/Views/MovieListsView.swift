@@ -14,22 +14,23 @@ struct MovieListsView: View {
     // Reusable background used for the pinned header and the status-bar filler overlay
     @ViewBuilder
     private var headerBackground: some View {
-        // Use a solid theme background + gradient only. Avoid materials here because
-        // on real devices the status bar region can sample a dark underlay, leading to
-        // mismatch vs simulator. This renders identically on device and simulator.
-        ZStack {
-            AppColors.background.opacity(0.94)
-            LinearGradient(
-                colors: [
-                    AppColors.background.opacity(0.00),
-                    AppColors.background.opacity(0.06),
-                    AppColors.background.opacity(0.12),
-                    AppColors.background.opacity(0.18),
-                    AppColors.background.opacity(0.22)
-                ],
-                startPoint: .bottom,
-                endPoint: .top
-            )
+        if reduceTransparency {
+            AppColors.background.opacity(0.95)
+        } else {
+            ZStack {
+                Rectangle().fill(.regularMaterial).opacity(0.82)
+                LinearGradient(
+                    colors: [
+                        AppColors.background.opacity(0.00),
+                        AppColors.background.opacity(0.06),
+                        AppColors.background.opacity(0.12),
+                        AppColors.background.opacity(0.18),
+                        AppColors.background.opacity(0.22)
+                    ],
+                    startPoint: .bottom,
+                    endPoint: .top
+                )
+            }
         }
     }
 
