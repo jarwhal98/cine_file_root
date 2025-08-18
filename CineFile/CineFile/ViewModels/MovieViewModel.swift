@@ -520,7 +520,13 @@ class MovieViewModel: ObservableObject {
         // Process sequentially to avoid Swift 6 captured var issues
         while !inFlight.isEmpty {
             let t = inFlight.removeFirst()
-            if let maybe = try? await t.value, let movie = maybe { imported.append(movie) }
+            do {
+                if let movie = try await t.value {
+                    imported.append(movie)
+                }
+            } catch {
+                // Ignore individual fetch errors; continue processing others
+            }
             completed += 1
             let local = Double(completed) / Double(total)
             await MainActor.run {
