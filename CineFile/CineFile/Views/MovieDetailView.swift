@@ -313,7 +313,7 @@ struct MovieDetailView: View {
             }
         }
     .edgesIgnoringSafeArea(.top)
-    .background(AppColors.background)
+    .background(AppColors.background.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarItems(trailing:
             Button {
@@ -328,6 +328,21 @@ struct MovieDetailView: View {
         .sheet(isPresented: $isShowingRatingSheet) {
             MovieRatingView(movie: updatedMovie, userRating: $userRating, isPresented: $isShowingRatingSheet)
                 .background(AppColors.background)
+        }
+        // Make nav bar background transparent to avoid white strip at the top
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarBorderHidden(true, for: .navigationBar)
+        .onAppear {
+            if #available(iOS 16.0, *) {
+                // handled by toolbarBackground modifiers
+            } else {
+                let appearance = UINavigationBarAppearance()
+                appearance.configureWithTransparentBackground()
+                appearance.backgroundColor = .clear
+                appearance.shadowColor = .clear
+                UINavigationBar.appearance().standardAppearance = appearance
+                UINavigationBar.appearance().scrollEdgeAppearance = appearance
+            }
         }
     }
 }
