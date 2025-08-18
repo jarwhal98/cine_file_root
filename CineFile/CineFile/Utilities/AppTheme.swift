@@ -50,8 +50,24 @@ enum AppTheme {
         UITableView.appearance().separatorColor = bg
         UITableViewCell.appearance().backgroundColor = .clear
         UITableViewHeaderFooterView.appearance().tintColor = bg
+        // Diagnostic: Log key accessibility display states once on launch to help debug device-only rendering diffs
+        Self.logAccessibilityState(prefix: "[AppTheme]")
         #endif
     }
+
+    #if os(iOS)
+    private static func logAccessibilityState(prefix: String = "") {
+        #if canImport(UIKit)
+        let inv = UIAccessibility.isInvertColorsEnabled
+        let dark = UIAccessibility.isDarkerSystemColorsEnabled
+        let redTrans = UIAccessibility.isReduceTransparencyEnabled
+        let diffNoColor = UIAccessibility.isDifferentiateWithoutColorEnabled
+        let bold = UIAccessibility.isBoldTextEnabled
+        let reduceMotion = UIAccessibility.isReduceMotionEnabled
+        print("\(prefix) Accessibility: invertColors=\(inv), darkerSystemColors=\(dark), reduceTransparency=\(redTrans), differentiateWithoutColor=\(diffNoColor), boldText=\(bold), reduceMotion=\(reduceMotion)")
+        #endif
+    }
+    #endif
 }
 
 // iOS 16+: Control spacing between List rows. No-op on earlier versions.

@@ -27,6 +27,22 @@ struct CineFileApp: App {
                 // Kick off first-launch preload; Splash will show progress
                 viewModel.startInitialPreloadIfNeeded()
             }
+            // Log whenever key accessibility states change (iOS posts notifications)
+            .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.invertColorsStatusDidChangeNotification)) { _ in
+                #if os(iOS)
+                print("[App] Invert Colors changed")
+                #endif
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.darkerSystemColorsStatusDidChangeNotification)) { _ in
+                #if os(iOS)
+                print("[App] Darker System Colors changed")
+                #endif
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.reduceTransparencyStatusDidChangeNotification)) { _ in
+                #if os(iOS)
+                print("[App] Reduce Transparency changed")
+                #endif
+            }
         }
     }
 }

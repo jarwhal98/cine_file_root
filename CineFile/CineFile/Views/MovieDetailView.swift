@@ -39,6 +39,7 @@ struct MovieDetailView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .clipped()
+                    .accessibilityIgnoresInvertColors()
                     
                     // Gradient overlay
                     LinearGradient(
@@ -75,6 +76,7 @@ struct MovieDetailView: View {
                         }
                         .frame(width: 120, height: 180)
                         .padding(.bottom, 15)
+                        .accessibilityIgnoresInvertColors()
                         
                         // Title and basic info
                         VStack(alignment: .leading, spacing: 8) {
@@ -297,6 +299,7 @@ struct MovieDetailView: View {
                                             }
                                         }
                                         .frame(width: 100, height: 150)
+                                        .accessibilityIgnoresInvertColors()
                                         
                                         Text(movie.title)
                                             .font(.caption)

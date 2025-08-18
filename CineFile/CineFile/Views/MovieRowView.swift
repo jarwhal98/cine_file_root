@@ -31,6 +31,7 @@ struct MovieRowView: View {
                 }
             }
             .frame(width: 60, height: 90)
+            .accessibilityIgnoresInvertColors()
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(movie.title)
