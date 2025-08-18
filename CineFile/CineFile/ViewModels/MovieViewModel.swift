@@ -233,6 +233,7 @@ class MovieViewModel: ObservableObject {
     
     // MARK: - List Management
     
+    @MainActor
     func selectList(_ listID: String) {
         if listID == Self.allListsID {
             selectedList = MovieList(
@@ -251,6 +252,7 @@ class MovieViewModel: ObservableObject {
         updateSelectedListMovies()
     }
     
+    @MainActor
     func updateSelectedListMovies() {
         guard let list = selectedList else {
             selectedListMovies = []
@@ -312,6 +314,7 @@ class MovieViewModel: ObservableObject {
         return sortAscending ? baselineSorted : baselineSorted.reversed()
     }
     
+    @MainActor
     func setSortOption(_ option: MovieSortOption) {
         if option == sortOption {
             // Toggle direction
@@ -338,6 +341,7 @@ class MovieViewModel: ObservableObject {
     
     // MARK: - Movie Management
     
+    @MainActor
     func toggleWatchlist(for movie: Movie) {
         if let index = movies.firstIndex(where: { $0.id == movie.id }) {
             movies[index].inWatchlist.toggle()
@@ -355,6 +359,7 @@ class MovieViewModel: ObservableObject {
         }
     }
     
+    @MainActor
     func toggleWatched(for movie: Movie) {
         if let index = movies.firstIndex(where: { $0.id == movie.id }) {
             movies[index].watched.toggle()
@@ -371,6 +376,7 @@ class MovieViewModel: ObservableObject {
         }
     }
     
+    @MainActor
     func rateMovie(_ movie: Movie, rating: Double) {
         if let index = movies.firstIndex(where: { $0.id == movie.id }) {
             movies[index].userRating = rating
@@ -387,6 +393,7 @@ class MovieViewModel: ObservableObject {
         }
     }
 
+    @MainActor
     func setWatchedDate(for movie: Movie, date: Date) {
         if let index = movies.firstIndex(where: { $0.id == movie.id }) {
             movies[index].watchedDate = date
@@ -408,8 +415,8 @@ class MovieViewModel: ObservableObject {
             return
         }
 
-        isLoading = true
-        errorMessage = nil
+    isLoading = true
+    errorMessage = nil
 
     Task { @MainActor in
             do {
@@ -479,11 +486,11 @@ class MovieViewModel: ObservableObject {
     }
 
     private func importList(rows: [ImportRow], listID: String, progress: ((Double) -> Void)? = nil) async throws {
-    isImporting = true
+        await MainActor.run { self.isImporting = true }
         importProgress = 0
         let total = max(rows.count, 1)
         defer {
-            isImporting = false
+            Task { @MainActor in self.isImporting = false }
         }
         var imported: [Movie] = []
 
@@ -545,42 +552,44 @@ class MovieViewModel: ObservableObject {
         }
 
         // Merge into existing movies: prefer ID match, fallback to title+year to avoid duplicates
-        for m in imported {
-            if let idx = movies.firstIndex(where: { $0.id == m.id }) {
-                let existing = movies[idx]
-                var merged = m
-                merged.watched = existing.watched
-                merged.inWatchlist = existing.inWatchlist
-                merged.userRating = existing.userRating
-                merged.listRankings.merge(existing.listRankings) { new, old in new }
-                movies[idx] = merged
-            } else if let idx2 = movies.firstIndex(where: { $0.title.caseInsensitiveCompare(m.title) == .orderedSame && $0.year == m.year }) {
-                var existing = movies[idx2]
-                // Merge rankings into existing record and preserve its ID
-                existing.listRankings.merge(m.listRankings) { new, old in new }
-                // Optionally fill missing metadata from m if existing lacks it
-                if existing.director.isEmpty { existing.director = m.director }
-                if existing.posterURL.isEmpty { existing.posterURL = m.posterURL }
-                if existing.overview.isEmpty { existing.overview = m.overview }
-                if existing.runtime == 0 { existing.runtime = m.runtime }
-                if existing.genres.isEmpty { existing.genres = m.genres }
-                if existing.cast.isEmpty { existing.cast = m.cast }
-                movies[idx2] = existing
-            } else {
-                movies.append(m)
+        await MainActor.run {
+            for m in imported {
+                if let idx = movies.firstIndex(where: { $0.id == m.id }) {
+                    let existing = movies[idx]
+                    var merged = m
+                    merged.watched = existing.watched
+                    merged.inWatchlist = existing.inWatchlist
+                    merged.userRating = existing.userRating
+                    merged.listRankings.merge(existing.listRankings) { new, old in new }
+                    movies[idx] = merged
+                } else if let idx2 = movies.firstIndex(where: { $0.title.caseInsensitiveCompare(m.title) == .orderedSame && $0.year == m.year }) {
+                    var existing = movies[idx2]
+                    // Merge rankings into existing record and preserve its ID
+                    existing.listRankings.merge(m.listRankings) { new, old in new }
+                    // Optionally fill missing metadata from m if existing lacks it
+                    if existing.director.isEmpty { existing.director = m.director }
+                    if existing.posterURL.isEmpty { existing.posterURL = m.posterURL }
+                    if existing.overview.isEmpty { existing.overview = m.overview }
+                    if existing.runtime == 0 { existing.runtime = m.runtime }
+                    if existing.genres.isEmpty { existing.genres = m.genres }
+                    if existing.cast.isEmpty { existing.cast = m.cast }
+                    movies[idx2] = existing
+                } else {
+                    movies.append(m)
+                }
             }
-        }
-        updateSelectedListMovies()
-        // Don’t override user/saved selection during bulk imports; only set if nothing is selected and none saved
-        let hasSavedSelection = UserDefaults.standard.string(forKey: "selectedListID") != nil
-        if selectedList == nil && !hasSavedSelection {
-            if let list = movieLists.first(where: { $0.id == listID }) {
-                selectList(list.id)
-            } else {
-                // Add list metadata from catalog if missing (avoid hardcoded fallbacks)
-                ensureListMetadata(for: listID)
+            updateSelectedListMovies()
+            // Don’t override user/saved selection during bulk imports; only set if nothing is selected and none saved
+            let hasSavedSelection = UserDefaults.standard.string(forKey: "selectedListID") != nil
+            if selectedList == nil && !hasSavedSelection {
                 if let list = movieLists.first(where: { $0.id == listID }) {
                     selectList(list.id)
+                } else {
+                    // Add list metadata from catalog if missing (avoid hardcoded fallbacks)
+                    ensureListMetadata(for: listID)
+                    if let list = movieLists.first(where: { $0.id == listID }) {
+                        selectList(list.id)
+                    }
                 }
             }
         }
