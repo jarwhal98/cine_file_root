@@ -34,6 +34,16 @@ class MovieViewModel: ObservableObject {
 
     // Defer preload to startup (Splash will show progress)
 
+        // First-launch defaults: NYT list, ascending by rank (so #1 is at the top)
+        if UserDefaults.standard.object(forKey: "hasLaunchedOnce") == nil || UserDefaults.standard.bool(forKey: "hasLaunchedOnce") == false {
+            UserDefaults.standard.set(MovieSortOption.listRank.rawValue, forKey: "sortOption")
+            UserDefaults.standard.set(true, forKey: "sortAscending") // ascending for list rank
+            UserDefaults.standard.set("nytimes-100-21st-century", forKey: "selectedListID")
+            UserDefaults.standard.set(true, forKey: "hasLaunchedOnce")
+            sortOption = .listRank
+            sortAscending = true
+        }
+
         // Restore sort option & selected list if available
         if let savedSort = UserDefaults.standard.string(forKey: "sortOption"), let parsed = MovieSortOption(rawValue: savedSort) {
             sortOption = parsed
@@ -87,6 +97,12 @@ class MovieViewModel: ObservableObject {
                 let cfg = try JSONDecoder().decode(PreloadConfig.self, from: data)
                 let initialItems = cfg.lists.filter { $0.preload != false }
                 self.movieLists = initialItems.map { MovieList(id: $0.id, name: $0.name, description: $0.description, source: $0.source, year: $0.year, movieIDs: []) }
+                // Normalize any existing list metadata from catalog
+                self.syncMovieListsWithCatalog()
+                // Respect saved selection if present
+                if let savedListID = UserDefaults.standard.string(forKey: "selectedListID"), self.movieLists.contains(where: { $0.id == savedListID }) {
+                    self.selectList(savedListID)
+                }
 
                 // Determine overall total for a smoother progress ramp
                 var totalRows = 0
@@ -123,8 +139,10 @@ class MovieViewModel: ObservableObject {
                     })
                     processedRows += rows.count
 
-                    // Select first list after it’s ready
-                    if idx == 0 { self.selectList(item.id) }
+                    // Select first list after it’s ready only if no saved selection exists
+                    if idx == 0 && UserDefaults.standard.string(forKey: "selectedListID") == nil {
+                        self.selectList(item.id)
+                    }
                 }
                 let importedCount = self.movies.count - initialMovieCount
                 if importedCount > 0 {
@@ -182,6 +200,8 @@ class MovieViewModel: ObservableObject {
         var processedRows = 0
         for item in items {
             if importCancelled { break }
+            // Ensure list metadata exists before import (prevents wrong labels)
+            ensureListMetadata(for: item.id)
             preloadStatus = "Importing \(item.name)…"
             let rows: [ImportRow]
             switch item.type {
@@ -206,7 +226,9 @@ class MovieViewModel: ObservableObject {
         }
         isImporting = false
         preloadStatus = "Ready"
-        updateSelectedListMovies()
+    // Normalize labels from catalog and refresh movies
+    syncMovieListsWithCatalog()
+    updateSelectedListMovies()
     }
     
     // MARK: - List Management
@@ -549,14 +571,18 @@ class MovieViewModel: ObservableObject {
             }
         }
         updateSelectedListMovies()
-        if let list = movieLists.first(where: { $0.id == listID }) {
-            selectList(list.id)
-        } else {
-            // Add list metadata if missing
-            let listName = (listID == "nytimes-100-21st-century") ? "NYTimes 100 Best Movies of the 21st Century" : "AFI 100 Greatest Films (2007)"
-            let newList = MovieList(id: listID, name: listName, description: listName, source: listID.contains("afi") ? "AFI" : "The New York Times", year: listID.contains("nytimes") ? 2025 : 2007, movieIDs: [])
-            movieLists.append(newList)
-            selectList(newList.id)
+        // Don’t override user/saved selection during bulk imports; only set if nothing is selected and none saved
+        let hasSavedSelection = UserDefaults.standard.string(forKey: "selectedListID") != nil
+        if selectedList == nil && !hasSavedSelection {
+            if let list = movieLists.first(where: { $0.id == listID }) {
+                selectList(list.id)
+            } else {
+                // Add list metadata from catalog if missing (avoid hardcoded fallbacks)
+                ensureListMetadata(for: listID)
+                if let list = movieLists.first(where: { $0.id == listID }) {
+                    selectList(list.id)
+                }
+            }
         }
     }
 
@@ -609,5 +635,29 @@ class MovieViewModel: ObservableObject {
 
     func cancelImport() {
         importCancelled = true
+    }
+
+    // MARK: - Helpers
+    private func ensureListMetadata(for id: String) {
+        if movieLists.contains(where: { $0.id == id }) { return }
+        // Try catalog first
+        if let cfg = loadPreloadConfig(), let item = cfg.lists.first(where: { $0.id == id }) {
+            movieLists.append(MovieList(id: item.id, name: item.name, description: item.description, source: item.source, year: item.year, movieIDs: []))
+            return
+        }
+        // Fallback minimal entry if catalog missing
+        movieLists.append(MovieList(id: id, name: id, description: id, source: "", year: Calendar.current.component(.year, from: Date()), movieIDs: []))
+    }
+
+    private func syncMovieListsWithCatalog() {
+        guard let cfg = loadPreloadConfig() else { return }
+        var map: [String: PreloadList] = [:]
+        for item in cfg.lists { map[item.id] = item }
+        movieLists = movieLists.map { ml in
+            if let item = map[ml.id] {
+                return MovieList(id: ml.id, name: item.name, description: item.description, source: item.source, year: item.year, movieIDs: ml.movieIDs)
+            }
+            return ml
+        }
     }
 }
