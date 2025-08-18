@@ -7,6 +7,8 @@ struct MovieList: Identifiable, Codable, Equatable {
     var source: String // e.g., "NYTimes", "AFI", etc.
     var year: Int // Year the list was published
     var movieIDs: [String] // IDs of movies in this list
+    // Mark lists created by the user; optional for backward-compatible decoding
+    var isUserCreated: Bool? = nil
     
     // Optional fields
     var imageURL: String?

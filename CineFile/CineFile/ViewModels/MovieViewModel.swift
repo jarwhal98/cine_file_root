@@ -25,6 +25,7 @@ class MovieViewModel: ObservableObject {
     @Published var preloadStatus: String = ""
     private let tmdb = TMDBService()
     private let logger = Logger(subsystem: "com.cinefile.app", category: "MovieViewModel")
+    private let userListsKey = "userCreatedLists"
     
     init() {
         // Initialize collections
@@ -56,7 +57,9 @@ class MovieViewModel: ObservableObject {
         } else if let first = movieLists.first {
             Task { @MainActor in self.selectList(first.id) }
         }
-        Task { @MainActor in self.updateSelectedListMovies() }
+    // Load user-created lists from persistence before first update
+    loadUserLists()
+    Task { @MainActor in self.updateSelectedListMovies() }
     }
 
     private struct PreloadList: Decodable { let id: String; let name: String; let description: String; let source: String; let year: Int; let type: String; let resource: String; let preload: Bool? }
@@ -83,6 +86,7 @@ class MovieViewModel: ObservableObject {
                 self.isImporting = false
                 // Always allow proceeding past splash once the attempt finishes (even on failure)
                 self.preloadCompleted = true
+                self.reconcileUserListMembership()
                 self.updateSelectedListMovies()
             }
             // Config is bundled at root; no subdirectory in app bundle
@@ -222,10 +226,11 @@ class MovieViewModel: ObservableObject {
             }
             processedRows += rows.count
         }
-        isImporting = false
-        preloadStatus = "Ready"
+    isImporting = false
+    preloadStatus = "Ready"
     // Normalize labels from catalog and refresh movies
     syncMovieListsWithCatalog()
+    reconcileUserListMembership()
     updateSelectedListMovies()
     }
     
@@ -652,9 +657,117 @@ class MovieViewModel: ObservableObject {
         for item in cfg.lists { map[item.id] = item }
         movieLists = movieLists.map { ml in
             if let item = map[ml.id] {
-                return MovieList(id: ml.id, name: item.name, description: item.description, source: item.source, year: item.year, movieIDs: ml.movieIDs)
+                // Preserve user-created flag when present
+                return MovieList(id: ml.id, name: item.name, description: item.description, source: item.source, year: item.year, movieIDs: ml.movieIDs, isUserCreated: ml.isUserCreated)
             }
             return ml
+        }
+    }
+
+    // Apply user list membership to movies based on stored movieIDs
+    @MainActor
+    private func reconcileUserListMembership() {
+        let userLists = movieLists.filter { $0.isUserCreated == true }
+        guard !userLists.isEmpty, !movies.isEmpty else { return }
+        var rankMaps: [String: [String: Int]] = [:] // listID -> movieID -> rank
+        for ul in userLists {
+            var m: [String: Int] = [:]
+            for (idx, mid) in ul.movieIDs.enumerated() { m[mid] = idx + 1 }
+            rankMaps[ul.id] = m
+        }
+        for i in movies.indices {
+            for (listID, map) in rankMaps {
+                if let rank = map[movies[i].id] {
+                    movies[i].listRankings[listID] = rank
+                }
+            }
+        }
+    }
+
+    // MARK: - User-created Lists
+    @MainActor
+    func createUserList(name: String, description: String = "") {
+        let id = "user-\(UUID().uuidString.lowercased())"
+        let list = MovieList(id: id, name: name, description: description, source: "My Lists", year: Calendar.current.component(.year, from: Date()), movieIDs: [], isUserCreated: true)
+        movieLists.insert(list, at: 0)
+        persistUserLists()
+    }
+
+    @MainActor
+    func renameUserList(id: String, newName: String) {
+        guard let idx = movieLists.firstIndex(where: { $0.id == id && ($0.isUserCreated ?? false) }) else { return }
+        movieLists[idx].name = newName
+        persistUserLists()
+    }
+
+    @MainActor
+    func deleteUserList(id: String) {
+        // If deleting currently selected list, fallback to All Lists
+        if selectedList?.id == id { selectList(Self.allListsID) }
+        movieLists.removeAll { $0.id == id && ($0.isUserCreated ?? false) }
+        // Also remove listRanking keys from movies for cleanliness
+        for i in movies.indices {
+            _ = movies[i].listRankings.removeValue(forKey: id)
+        }
+        persistUserLists()
+        updateSelectedListMovies()
+    }
+
+    @MainActor
+    func addMovie(_ movie: Movie, toListID id: String) {
+        guard let idx = movieLists.firstIndex(where: { $0.id == id }) else { return }
+        if !movieLists[idx].movieIDs.contains(movie.id) {
+            movieLists[idx].movieIDs.append(movie.id)
+        }
+        // Assign a rank if not present; use append position as rank
+        if let mIdx = movies.firstIndex(where: { $0.id == movie.id }) {
+            if movies[mIdx].listRankings[id] == nil {
+                let rank = (movieLists[idx].movieIDs.firstIndex(of: movie.id).map { $0 + 1 }) ?? 1
+                movies[mIdx].listRankings[id] = rank
+            }
+        }
+        persistUserLists()
+        updateSelectedListMovies()
+    }
+
+    @MainActor
+    func removeMovie(_ movie: Movie, fromListID id: String) {
+        guard let idx = movieLists.firstIndex(where: { $0.id == id }) else { return }
+        movieLists[idx].movieIDs.removeAll { $0 == movie.id }
+        if let mIdx = movies.firstIndex(where: { $0.id == movie.id }) {
+            movies[mIdx].listRankings.removeValue(forKey: id)
+        }
+        persistUserLists()
+        updateSelectedListMovies()
+    }
+
+    // Persist only user-created lists
+    private func persistUserLists() {
+        do {
+            let userLists = movieLists.filter { $0.isUserCreated == true }
+            let data = try JSONEncoder().encode(userLists)
+            UserDefaults.standard.set(data, forKey: userListsKey)
+        } catch {
+            logger.error("Failed to persist user lists: \(error.localizedDescription)")
+        }
+    }
+
+    private func loadUserLists() {
+        guard let data = UserDefaults.standard.data(forKey: userListsKey) else { return }
+        do {
+            let lists = try JSONDecoder().decode([MovieList].self, from: data)
+            // Merge with existing (avoid duplicates by id)
+            let existingIDs = Set(movieLists.map { $0.id })
+            let toAdd = lists.filter { !existingIDs.contains($0.id) }
+            movieLists.append(contentsOf: toAdd)
+            if !movies.isEmpty {
+                Task { @MainActor in
+                    self.reconcileUserListMembership()
+                    self.updateSelectedListMovies()
+                }
+            }
+        } catch {
+            logger.error("Failed to decode user lists: \(error.localizedDescription)")
         }
     }
 }

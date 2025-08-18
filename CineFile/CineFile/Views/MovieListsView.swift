@@ -223,6 +223,7 @@ struct MovieListsView: View {
 }
 
 struct MovieListRowView: View {
+    @EnvironmentObject var viewModel: MovieViewModel
     let movie: Movie
     var listID: String? = nil
     var toggleSeen: (() -> Void)? = nil
@@ -369,6 +370,20 @@ struct MovieListRowView: View {
         .padding(.vertical, 8)
         .listRowBackground(AppColors.background)
         .listRowSeparator(.hidden)
+        .contextMenu {
+            let userLists = viewModel.movieLists.filter { ($0.isUserCreated ?? false) }
+            if userLists.isEmpty {
+                Text("No user lists yet")
+            } else {
+                ForEach(userLists) { ul in
+                    if movie.listRankings[ul.id] == nil {
+                        Button("Add to \(ul.name)") { viewModel.addMovie(movie, toListID: ul.id) }
+                    } else {
+                        Button("Remove from \(ul.name)") { viewModel.removeMovie(movie, fromListID: ul.id) }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -433,9 +448,7 @@ struct ListSelectorView: View {
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
-                            
-                            Spacer()
-                            
+
                             if viewModel.selectedList?.id == list.id {
                                 Image(systemName: "checkmark")
                                     .foregroundColor(.secondary)
@@ -470,6 +483,8 @@ struct ManageListsView: View {
     @EnvironmentObject var viewModel: MovieViewModel
     @Binding var isPresented: Bool
     @State private var selected: Set<String> = []
+    @State private var showingNewListPrompt = false
+    @State private var newListName: String = ""
 
     var body: some View {
         NavigationView {
@@ -511,7 +526,26 @@ struct ManageListsView: View {
                     }
                     .disabled(selected.isEmpty)
                 }
+                ToolbarItem(placement: .bottomBar) {
+                    Button {
+                        showingNewListPrompt = true
+                    } label: {
+                        Label("New List", systemImage: "plus")
+                    }
+                }
             }
+        }
+        .alert("New List", isPresented: $showingNewListPrompt) {
+            TextField("List name", text: $newListName)
+            Button("Create") {
+                let name = newListName.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !name.isEmpty { viewModel.createUserList(name: name) }
+                newListName = ""
+            }
+            Button("Cancel", role: .cancel) { newListName = "" }
+        } message: {
+            Text("Create a personal list to add movies into.")
         }
     }
 }
+ 
