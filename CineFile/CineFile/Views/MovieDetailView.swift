@@ -16,6 +16,7 @@ struct MovieDetailView: View {
     }
     
     var body: some View {
+    GeometryReader { proxy in
     ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 // Header with poster and basic info
@@ -147,41 +148,8 @@ struct MovieDetailView: View {
                     }
                     .padding(.horizontal)
                 }
-                // Top overlay with custom Back and Rate buttons
-                .overlay(alignment: .top) {
-                    GeometryReader { geo in
-                        let topInset = geo.safeAreaInsets.top
-                        HStack {
-                            Button(action: { dismiss() }) {
-                                Image(systemName: "chevron.left")
-                                    .font(.system(size: 17, weight: .semibold))
-                                    .foregroundColor(.primary)
-                                    .padding(10)
-                                    .background(.ultraThinMaterial, in: Circle())
-                            }
-
-                            Spacer()
-
-                            Button(action: { isShowingRatingSheet = true }) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "star.fill")
-                                    Text("Rate")
-                                }
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundColor(.primary)
-                                .padding(.vertical, 8)
-                                .padding(.horizontal, 14)
-                                .background(.ultraThinMaterial, in: Capsule())
-                            }
-                        }
-                        .padding(.horizontal)
-                        .padding(.top, max(topInset, 12))
-                        .contentShape(Rectangle())
-                        .allowsHitTesting(true)
-                    }
-                    .frame(height: 0) // use only for insets; content is positioned by padding
-                }
-                .zIndex(1)
+                // Extend header under the status/navigation bar to avoid top white band
+                .padding(.top, -proxy.safeAreaInsets.top)
                 
                 // Action buttons
                 HStack(spacing: 20) {
@@ -350,8 +318,17 @@ struct MovieDetailView: View {
         }
     .edgesIgnoringSafeArea(.top)
     .background(AppColors.background.ignoresSafeArea())
-        .navigationBarBackButtonHidden(true)
-        .navigationBarHidden(true)
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarItems(trailing:
+            Button {
+                isShowingRatingSheet = true
+            } label: {
+                HStack {
+                    Image(systemName: "star.fill")
+                    Text("Rate")
+                }
+            }
+        )
         .sheet(isPresented: $isShowingRatingSheet) {
             MovieRatingView(movie: updatedMovie, userRating: $userRating, isPresented: $isShowingRatingSheet)
                 .background(AppColors.background)
@@ -377,6 +354,7 @@ struct MovieDetailView: View {
                 UINavigationBar.appearance().scrollEdgeAppearance = appearance
             }
         }
+    }
     }
 }
 
