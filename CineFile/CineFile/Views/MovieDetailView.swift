@@ -28,11 +28,13 @@ struct MovieDetailView: View {
                             image
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
-                                .frame(height: 200)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 220)
+                                .clipped()
                                 .blur(radius: 10)
                         default:
                             Color.gray.opacity(0.3)
-                                .frame(height: 200)
+                                .frame(height: 220)
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -44,7 +46,7 @@ struct MovieDetailView: View {
                         startPoint: .bottom,
                         endPoint: .top
                     )
-                    .frame(height: 100)
+                    .frame(height: 120)
                     
                     // Movie info overlay
                     HStack(alignment: .bottom, spacing: 15) {
@@ -148,8 +150,8 @@ struct MovieDetailView: View {
                     }
                     .padding(.horizontal)
                 }
-                // Extend header under the status/navigation bar to avoid top white band
-                .padding(.top, -proxy.safeAreaInsets.top)
+                // Keep header within safe area for consistent layout across devices
+                .padding(.top, 0)
                 
                 // Action buttons
                 HStack(spacing: 20) {
@@ -316,8 +318,7 @@ struct MovieDetailView: View {
                 .padding(.top)
             }
         }
-    .edgesIgnoringSafeArea(.top)
-    .background(AppColors.background.ignoresSafeArea())
+    .background(AppColors.background)
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarItems(trailing:
             Button {
@@ -333,27 +334,7 @@ struct MovieDetailView: View {
             MovieRatingView(movie: updatedMovie, userRating: $userRating, isPresented: $isShowingRatingSheet)
                 .background(AppColors.background)
         }
-        // Make nav bar background transparent to avoid white strip at the top
-        .onAppear {
-            if #available(iOS 16.0, *) {
-                // Use hidden toolbar background on iOS 16+
-                UINavigationBar.appearance().scrollEdgeAppearance = {
-                    let a = UINavigationBarAppearance()
-                    a.configureWithTransparentBackground()
-                    a.backgroundColor = .clear
-                    a.shadowColor = .clear
-                    return a
-                }()
-                UINavigationBar.appearance().standardAppearance = UINavigationBar.appearance().scrollEdgeAppearance!
-            } else {
-                let appearance = UINavigationBarAppearance()
-                appearance.configureWithTransparentBackground()
-                appearance.backgroundColor = .clear
-                appearance.shadowColor = .clear
-                UINavigationBar.appearance().standardAppearance = appearance
-                UINavigationBar.appearance().scrollEdgeAppearance = appearance
-            }
-        }
+    // No global UINavigationBar appearance changes here to avoid side effects
     }
     }
 }
