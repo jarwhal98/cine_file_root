@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MovieListsView: View {
     @EnvironmentObject var viewModel: MovieViewModel
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @State private var showingListSelector = false
     @State private var ratingSheetMovie: Movie? = nil
     @State private var ratingSheetUserRating: Double = 0
@@ -173,29 +174,31 @@ struct MovieListsView: View {
                         .padding(.top, 0)
                         .padding(.bottom, 0)
                         .background(
-                            ZStack {
-                                // Base glass material at current opacity
-                                Rectangle().fill(.regularMaterial).opacity(0.82)
-                                // Opacity ramp: clearer near filters, more opaque toward the top (CineFile title)
-                                LinearGradient(
-                                    colors: [
-                                        AppColors.background.opacity(0.00),
-                                        AppColors.background.opacity(0.06),
-                                        AppColors.background.opacity(0.12),
-                                        AppColors.background.opacity(0.18),
-                                        AppColors.background.opacity(0.22)
-                                    ],
-                                    startPoint: .bottom,
-                                    endPoint: .top
-                                )
+                            Group {
+                                if reduceTransparency {
+                                    AppColors.background.opacity(0.95)
+                                } else {
+                                    ZStack {
+                                        Rectangle().fill(.regularMaterial).opacity(0.82)
+                                        LinearGradient(
+                                            colors: [
+                                                AppColors.background.opacity(0.00),
+                                                AppColors.background.opacity(0.06),
+                                                AppColors.background.opacity(0.12),
+                                                AppColors.background.opacity(0.18),
+                                                AppColors.background.opacity(0.22)
+                                            ],
+                                            startPoint: .bottom,
+                                            endPoint: .top
+                                        )
+                                    }
+                                }
                             }
                         )
                     }
                 }
             }
-            .navigationTitle("CineFile")
-            .navigationBarTitleDisplayMode(.inline)
-            .navBarBackground(appBackground)
+            .navigationBarHidden(true)
             .sheet(isPresented: $showingListSelector) {
                 ListSelectorView(isPresented: $showingListSelector)
             }
