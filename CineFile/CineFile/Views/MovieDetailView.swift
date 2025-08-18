@@ -149,32 +149,39 @@ struct MovieDetailView: View {
                 }
                 // Top overlay with custom Back and Rate buttons
                 .overlay(alignment: .top) {
-                    HStack {
-                        Button(action: { dismiss() }) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 17, weight: .semibold))
-                                .foregroundColor(.primary)
-                                .padding(10)
-                                .background(.ultraThinMaterial, in: Circle())
-                        }
-
-                        Spacer()
-
-                        Button(action: { isShowingRatingSheet = true }) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "star.fill")
-                                Text("Rate")
+                    GeometryReader { geo in
+                        let topInset = geo.safeAreaInsets.top
+                        HStack {
+                            Button(action: { dismiss() }) {
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundColor(.primary)
+                                    .padding(10)
+                                    .background(.ultraThinMaterial, in: Circle())
                             }
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.primary)
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 14)
-                            .background(.ultraThinMaterial, in: Capsule())
+
+                            Spacer()
+
+                            Button(action: { isShowingRatingSheet = true }) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "star.fill")
+                                    Text("Rate")
+                                }
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(.primary)
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 14)
+                                .background(.ultraThinMaterial, in: Capsule())
+                            }
                         }
+                        .padding(.horizontal)
+                        .padding(.top, max(topInset, 12))
+                        .contentShape(Rectangle())
+                        .allowsHitTesting(true)
                     }
-                    .padding(.horizontal)
-                    .padding(.top, 8)
+                    .frame(height: 0) // use only for insets; content is positioned by padding
                 }
+                .zIndex(1)
                 
                 // Action buttons
                 HStack(spacing: 20) {
