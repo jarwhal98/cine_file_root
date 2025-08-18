@@ -330,11 +330,17 @@ struct MovieDetailView: View {
                 .background(AppColors.background)
         }
         // Make nav bar background transparent to avoid white strip at the top
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .toolbarBorderHidden(true, for: .navigationBar)
         .onAppear {
             if #available(iOS 16.0, *) {
-                // handled by toolbarBackground modifiers
+                // Use hidden toolbar background on iOS 16+
+                UINavigationBar.appearance().scrollEdgeAppearance = {
+                    let a = UINavigationBarAppearance()
+                    a.configureWithTransparentBackground()
+                    a.backgroundColor = .clear
+                    a.shadowColor = .clear
+                    return a
+                }()
+                UINavigationBar.appearance().standardAppearance = UINavigationBar.appearance().scrollEdgeAppearance!
             } else {
                 let appearance = UINavigationBarAppearance()
                 appearance.configureWithTransparentBackground()
