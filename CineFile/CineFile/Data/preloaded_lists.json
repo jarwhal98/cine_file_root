@@ -49,6 +49,46 @@
       "type": "csv-tspdt",
       "resource": "variety_best_horror_like_TSPDT100",
       "preload": true
-    }
+      },
+      {
+        "id": "rolling-stone-40-animated",
+        "name": "Rolling Stone: 40 Greatest Animated Movies",
+        "description": "Rolling Stone’s 40 greatest animated movies (TSPDT-like format).",
+        "source": "Rolling Stone",
+        "year": 2024,
+        "type": "csv-tspdt",
+        "resource": "rollingstone_40_animated_like_TSPDT100",
+        "preload": false
+      },
+      {
+        "id": "oscars-best-picture-winners",
+        "name": "Academy Awards: Best Picture Winners (1927–2024)",
+        "description": "All Best Picture winners from the Academy Awards.",
+        "source": "AMPAS",
+        "year": 2024,
+        "type": "csv-tspdt",
+        "resource": "best_picture_winners_full_1927_2024",
+        "preload": false
+      },
+      {
+        "id": "palme-dor-winners-1946-2025",
+        "name": "Cannes: Palme d’Or Winners (1946–2025)",
+        "description": "All Palme d’Or winners at the Cannes Film Festival.",
+        "source": "Cannes Film Festival",
+        "year": 2025,
+        "type": "csv-tspdt",
+        "resource": "palme_dor_winners_1946_2025",
+        "preload": false
+      },
+      {
+        "id": "sundance-grand-jury-dramatic-1978-2025",
+        "name": "Sundance: Grand Jury Prize – U.S. Dramatic (1978–2025)",
+        "description": "Grand Jury Prize (U.S. Dramatic) winners at Sundance.",
+        "source": "Sundance Film Festival",
+        "year": 2025,
+        "type": "csv-tspdt",
+        "resource": "sundance_grand_jury_dramatic_1978_2025",
+        "preload": false
+      }
   ]
 }

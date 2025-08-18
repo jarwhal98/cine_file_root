@@ -71,7 +71,8 @@ class MovieViewModel: ObservableObject {
             var succeeded = false
             defer {
                 self.isImporting = false
-                self.preloadCompleted = succeeded
+                // Always allow proceeding past splash once the attempt finishes (even on failure)
+                self.preloadCompleted = true
                 self.updateSelectedListMovies()
             }
             // Config is bundled at root; no subdirectory in app bundle

@@ -74,15 +74,34 @@ enum CSVImporter {
         var rows: [CSVRowTSPDT] = []
         let lines = csv.split(whereSeparator: { $0.isNewline })
         guard !lines.isEmpty else { return [] }
+
+        // Determine column indexes from header to support variants like:
+        // - Pos,2024,Title,Director,Year,Country,Mins
+        // - Pos,Year,Title,Director,2024,Country,Mins (Sundance-like)
+        let header = String(lines[0])
+        let headerFields = splitCSV(line: header)
+        func index(of name: String, fallback: Int) -> Int {
+            if let idx = headerFields.firstIndex(where: { $0.caseInsensitiveCompare(name) == .orderedSame }) {
+                return idx
+            }
+            return fallback
+        }
+
+        let posIdx = index(of: "Pos", fallback: 0)
+        let titleIdx = index(of: "Title", fallback: 2)
+        let directorIdx = index(of: "Director", fallback: 3)
+        let yearIdx = index(of: "Year", fallback: 4)
+        let minsIdx = index(of: "Mins", fallback: 6)
+
         for (idx, line) in lines.enumerated() {
-            if idx == 0 { continue } // header: Pos,2024,Title,Director,Year,Country,Mins
+            if idx == 0 { continue }
             let fields = splitCSV(line: String(line))
             // Ensure we have enough columns
-            guard fields.count >= 7 else { continue }
-            guard let rank = Int(fields[0]), let year = Int(fields[4]) else { continue }
-            let title = fields[2]
-            let director = fields[3]
-            let minutes = Int(fields[6]) ?? 0
+            guard fields.count > max(posIdx, titleIdx, directorIdx, yearIdx, minsIdx) else { continue }
+            guard let rank = Int(fields[posIdx]), let year = Int(fields[yearIdx]) else { continue }
+            let title = fields[titleIdx]
+            let director = fields[directorIdx]
+            let minutes = Int(fields[minsIdx]) ?? 0
             rows.append(CSVRowTSPDT(rank: rank, title: title, director: director, year: year, minutes: minutes))
         }
         return rows

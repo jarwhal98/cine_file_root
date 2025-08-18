@@ -29,6 +29,11 @@
 	DEADBEEF2D6A000100ABCDEF /* preloaded_lists.json in Resources */ = {isa = PBXBuildFile; fileRef = DEADBEEF2D6A000000ABCDEF /* preloaded_lists.json */; };
 	DEADBEEF2D6A010000ABCDEF /* TSPDT100.csv in Resources */ = {isa = PBXBuildFile; fileRef = DEADBEEF2D6A010100ABCDEF /* TSPDT100.csv */; };
 	DEADBEEF2D6A010200ABCDEF /* TSPDTAcclaim21st.csv in Resources */ = {isa = PBXBuildFile; fileRef = DEADBEEF2D6A010300ABCDEF /* TSPDTAcclaim21st.csv */; };
+	DEADBEEF2D6A010500ABCDEF /* variety_best_horror_like_TSPDT100.csv in Resources */ = {isa = PBXBuildFile; fileRef = DEADBEEF2D6A010400ABCDEF /* variety_best_horror_like_TSPDT100.csv */; };
+	DEADBEEF2D6A030000ABCDEF /* rollingstone_40_animated_like_TSPDT100.csv in Resources */ = {isa = PBXBuildFile; fileRef = DEADBEEF2D6A020000ABCDEF /* rollingstone_40_animated_like_TSPDT100.csv */; };
+	DEADBEEF2D6A030100ABCDEF /* best_picture_winners_full_1927_2024.csv in Resources */ = {isa = PBXBuildFile; fileRef = DEADBEEF2D6A020100ABCDEF /* best_picture_winners_full_1927_2024.csv */; };
+	DEADBEEF2D6A030200ABCDEF /* palme_dor_winners_1946_2025.csv in Resources */ = {isa = PBXBuildFile; fileRef = DEADBEEF2D6A020200ABCDEF /* palme_dor_winners_1946_2025.csv */; };
+	DEADBEEF2D6A030300ABCDEF /* sundance_grand_jury_dramatic_1978_2025.csv in Resources */ = {isa = PBXBuildFile; fileRef = DEADBEEF2D6A020300ABCDEF /* sundance_grand_jury_dramatic_1978_2025.csv */; };
 	F1E2D3C52B6EA00100000002 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E2D3C42B6EA00100000001 /* AppTheme.swift */; };
 	AA11BB22CC33DD44EE55FF67 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF66 /* SplashView.swift */; };
 	CC11DD22EE33FF44AA55BB66 /* SourceChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC11DD22EE33FF44AA55BB65 /* SourceChip.swift */; };
@@ -59,6 +64,11 @@
 	DEADBEEF2D6A000000ABCDEF /* preloaded_lists.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = preloaded_lists.json; sourceTree = "<group>"; };
 	DEADBEEF2D6A010100ABCDEF /* TSPDT100.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = TSPDT100.csv; sourceTree = "<group>"; };
 	DEADBEEF2D6A010300ABCDEF /* TSPDTAcclaim21st.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = TSPDTAcclaim21st.csv; sourceTree = "<group>"; };
+	DEADBEEF2D6A010400ABCDEF /* variety_best_horror_like_TSPDT100.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = variety_best_horror_like_TSPDT100.csv; sourceTree = "<group>"; };
+	DEADBEEF2D6A020000ABCDEF /* rollingstone_40_animated_like_TSPDT100.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = rollingstone_40_animated_like_TSPDT100.csv; sourceTree = "<group>"; };
+	DEADBEEF2D6A020100ABCDEF /* best_picture_winners_full_1927_2024.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = best_picture_winners_full_1927_2024.csv; sourceTree = "<group>"; };
+	DEADBEEF2D6A020200ABCDEF /* palme_dor_winners_1946_2025.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = palme_dor_winners_1946_2025.csv; sourceTree = "<group>"; };
+	DEADBEEF2D6A020300ABCDEF /* sundance_grand_jury_dramatic_1978_2025.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = sundance_grand_jury_dramatic_1978_2025.csv; sourceTree = "<group>"; };
 	F1E2D3C42B6EA00100000001 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 	AA11BB22CC33DD44EE55FF66 /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 	CC11DD22EE33FF44AA55BB65 /* SourceChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceChip.swift; sourceTree = "<group>"; };
@@ -152,6 +162,11 @@
 				DEADBEEF2D6A000000ABCDEF /* preloaded_lists.json */,
 				DEADBEEF2D6A010100ABCDEF /* TSPDT100.csv */,
 				DEADBEEF2D6A010300ABCDEF /* TSPDTAcclaim21st.csv */,
+				DEADBEEF2D6A010400ABCDEF /* variety_best_horror_like_TSPDT100.csv */,
+				DEADBEEF2D6A020000ABCDEF /* rollingstone_40_animated_like_TSPDT100.csv */,
+				DEADBEEF2D6A020100ABCDEF /* best_picture_winners_full_1927_2024.csv */,
+				DEADBEEF2D6A020200ABCDEF /* palme_dor_winners_1946_2025.csv */,
+				DEADBEEF2D6A020300ABCDEF /* sundance_grand_jury_dramatic_1978_2025.csv */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -244,6 +259,11 @@
 				DEADBEEF2D6A000100ABCDEF /* preloaded_lists.json in Resources */,
 				DEADBEEF2D6A010000ABCDEF /* TSPDT100.csv in Resources */,
 				DEADBEEF2D6A010200ABCDEF /* TSPDTAcclaim21st.csv in Resources */,
+				DEADBEEF2D6A010500ABCDEF /* variety_best_horror_like_TSPDT100.csv in Resources */,
+				DEADBEEF2D6A030000ABCDEF /* rollingstone_40_animated_like_TSPDT100.csv in Resources */,
+				DEADBEEF2D6A030100ABCDEF /* best_picture_winners_full_1927_2024.csv in Resources */,
+				DEADBEEF2D6A030200ABCDEF /* palme_dor_winners_1946_2025.csv in Resources */,
+				DEADBEEF2D6A030300ABCDEF /* sundance_grand_jury_dramatic_1978_2025.csv in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
