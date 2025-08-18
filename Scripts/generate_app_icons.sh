@@ -24,38 +24,34 @@ fi
 
 echo "Generating App Icons from: $SRC_IMAGE"
 
-# Map of filename -> size(px)
-typeset -A ICONS
+# Ordered list: filename size
 ICONS=(
-  # iPhone
-  icon-iphone-20@2x.png   40
-  icon-iphone-20@3x.png   60
-  icon-iphone-29@2x.png   58
-  icon-iphone-29@3x.png   87
-  icon-iphone-40@2x.png   80
-  icon-iphone-40@3x.png   120
-  icon-iphone-60@2x.png   120
-  icon-iphone-60@3x.png   180
-
-  # iPad
-  icon-ipad-20.png        20
-  icon-ipad-20@2x.png     40
-  icon-ipad-29.png        29
-  icon-ipad-29@2x.png     58
-  icon-ipad-40.png        40
-  icon-ipad-40@2x.png     80
-  icon-ipad-76.png        76
-  icon-ipad-76@2x.png     152
-  icon-ipad-83.5@2x.png   167
-
-  # App Store
-  icon-marketing-1024.png 1024
+  "icon-iphone-20@2x.png 40"
+  "icon-iphone-20@3x.png 60"
+  "icon-iphone-29@2x.png 58"
+  "icon-iphone-29@3x.png 87"
+  "icon-iphone-40@2x.png 80"
+  "icon-iphone-40@3x.png 120"
+  "icon-iphone-60@2x.png 120"
+  "icon-iphone-60@3x.png 180"
+  "icon-ipad-20.png 20"
+  "icon-ipad-20@2x.png 40"
+  "icon-ipad-29.png 29"
+  "icon-ipad-29@2x.png 58"
+  "icon-ipad-40.png 40"
+  "icon-ipad-40@2x.png 80"
+  "icon-ipad-76.png 76"
+  "icon-ipad-76@2x.png 152"
+  "icon-ipad-83.5@2x.png 167"
+  "icon-marketing-1024.png 1024"
 )
 
-for filename size in ${(kv)ICONS}; do
+for entry in "$ICONS[@]"; do
+  filename=${entry%% *}
+  size=${entry##* }
   dest="$APPICONSET/$filename"
-  echo " - $filename (${size}px)"
-  sips -s format png -Z "$size" "$SRC_IMAGE" --out "$dest" >/dev/null
+  echo " - $filename (${size}x${size})"
+  sips -s format png -z "$size" "$size" "$SRC_IMAGE" --out "$dest" >/dev/null
 done
 
 echo "Done. Generated icons in: $APPICONSET"

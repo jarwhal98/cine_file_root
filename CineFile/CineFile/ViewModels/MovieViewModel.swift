@@ -78,7 +78,7 @@ class MovieViewModel: ObservableObject {
         preloadStatus = "Preparing…"
 
         Task { @MainActor in
-            var succeeded = false
+            // Note: keep progress/status only; no local succeeded flag needed
             defer {
                 self.isImporting = false
                 // Always allow proceeding past splash once the attempt finishes (even on failure)
