@@ -517,6 +517,9 @@ class MovieViewModel: ObservableObject {
             }
         }
 
+    // Prime initial batch so there is work to process
+    for _ in 0..<min(maxConcurrent, rows.count) { launchNext() }
+
         // Process sequentially to avoid Swift 6 captured var issues
         while !inFlight.isEmpty {
             let t = inFlight.removeFirst()
