@@ -52,11 +52,11 @@ class MovieViewModel: ObservableObject {
             sortAscending = UserDefaults.standard.bool(forKey: "sortAscending")
         }
         if let savedListID = UserDefaults.standard.string(forKey: "selectedListID") {
-            selectList(savedListID)
+            Task { @MainActor in self.selectList(savedListID) }
         } else if let first = movieLists.first {
-            selectList(first.id)
+            Task { @MainActor in self.selectList(first.id) }
         }
-        self.updateSelectedListMovies()
+        Task { @MainActor in self.updateSelectedListMovies() }
     }
 
     private struct PreloadList: Decodable { let id: String; let name: String; let description: String; let source: String; let year: Int; let type: String; let resource: String; let preload: Bool? }
@@ -141,16 +141,14 @@ class MovieViewModel: ObservableObject {
 
                     // Select first list after it’s ready only if no saved selection exists
                     if idx == 0 && UserDefaults.standard.string(forKey: "selectedListID") == nil {
-                        self.selectList(item.id)
+                        Task { @MainActor in self.selectList(item.id) }
                     }
                 }
                 let importedCount = self.movies.count - initialMovieCount
                 if importedCount > 0 {
                     self.preloadStatus = "Ready"
-                    succeeded = true
                 } else {
                     self.preloadStatus = "No titles imported"
-                    succeeded = false
                 }
             } catch {
                 self.logger.error("Preload failed: \(error.localizedDescription)")
@@ -519,36 +517,17 @@ class MovieViewModel: ObservableObject {
             }
         }
 
-        // Prime initial batch
-        for _ in 0..<min(maxConcurrent, rows.count) { launchNext() }
-    while !inFlight.isEmpty {
-            let finished = await withTaskGroup(of: (Int, Movie?).self) { group -> [(Int, Movie?)] in
-                for (i, t) in inFlight.enumerated() {
-                    group.addTask { (i, try? await t.value) }
-                }
-                var results: [(Int, Movie?)] = []
-                for await val in group { results.append(val) }
-                return results
+        // Process sequentially to avoid Swift 6 captured var issues
+        while !inFlight.isEmpty {
+            let t = inFlight.removeFirst()
+            if let maybe = try? await t.value, let movie = maybe { imported.append(movie) }
+            completed += 1
+            let local = Double(completed) / Double(total)
+            await MainActor.run {
+                if let cb = progress { cb(local) } else { self.importProgress = local }
             }
-            inFlight.removeAll()
-            for (_, maybe) in finished {
-                if let movie = maybe { imported.append(movie) }
-        completed += 1
-        let local = Double(completed) / Double(total)
-        await MainActor.run {
-            if let cb = progress {
-                cb(local)
-            } else {
-                self.importProgress = local
-            }
-        }
-                if importCancelled {
-                    inFlight.removeAll()
-                    break
-                }
-                launchNext()
-            }
-            if importCancelled { break }
+            if importCancelled { inFlight.removeAll(); break }
+            launchNext()
         }
 
         // Merge into existing movies: prefer ID match, fallback to title+year to avoid duplicates
