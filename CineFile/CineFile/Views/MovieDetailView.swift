@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MovieDetailView: View {
     @EnvironmentObject var viewModel: MovieViewModel
+    @Environment(\.dismiss) private var dismiss
     let movie: Movie
     
     @State private var isShowingRatingSheet = false
@@ -145,6 +146,34 @@ struct MovieDetailView: View {
                         Spacer()
                     }
                     .padding(.horizontal)
+                }
+                // Top overlay with custom Back and Rate buttons
+                .overlay(alignment: .top) {
+                    HStack {
+                        Button(action: { dismiss() }) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundColor(.primary)
+                                .padding(10)
+                                .background(.ultraThinMaterial, in: Circle())
+                        }
+
+                        Spacer()
+
+                        Button(action: { isShowingRatingSheet = true }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "star.fill")
+                                Text("Rate")
+                            }
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.primary)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 14)
+                            .background(.ultraThinMaterial, in: Capsule())
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 8)
                 }
                 
                 // Action buttons
@@ -314,17 +343,8 @@ struct MovieDetailView: View {
         }
     .edgesIgnoringSafeArea(.top)
     .background(AppColors.background.ignoresSafeArea())
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarItems(trailing:
-            Button {
-                isShowingRatingSheet = true
-            } label: {
-                HStack {
-                    Image(systemName: "star.fill")
-                    Text("Rate")
-                }
-            }
-        )
+        .navigationBarBackButtonHidden(true)
+        .navigationBarHidden(true)
         .sheet(isPresented: $isShowingRatingSheet) {
             MovieRatingView(movie: updatedMovie, userRating: $userRating, isPresented: $isShowingRatingSheet)
                 .background(AppColors.background)
